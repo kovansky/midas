@@ -1,17 +1,22 @@
-package hugoPopulator
+package models
 
 import (
 	"fmt"
-	"github.com/kovansky/strapi2hugo/models"
 	"html/template"
 	"os"
+	"os/exec"
 	"path"
 )
 
-func (hugo HugoSite) CreateEntry(payload models.WebhookPayload) bool {
-	archetypesDir := path.Join(hugo.rootDir, "archetypes")
+type HugoSite struct {
+	SiteName string `json:"siteName"`
+	RootDir  string `json:"rootDir"`
+}
+
+func (hugo HugoSite) CreateEntry(payload WebhookPayload) bool {
+	archetypesDir := path.Join(hugo.RootDir, "archetypes")
 	defaultArchetype := path.Join(archetypesDir, "default.md")
-	outputDir := path.Join(hugo.rootDir, "content", payload.Model+"s")
+	outputDir := path.Join(hugo.RootDir, "content", payload.Model+"s")
 	title := fmt.Sprintf("%v", payload.Entry["Title"])
 	slug := createSlug(title)
 	outputPath := path.Join(outputDir, slug+".html")
@@ -41,5 +46,19 @@ func (hugo HugoSite) CreateEntry(payload models.WebhookPayload) bool {
 		return false
 	}
 
+	return true
+}
+
+func (hugo HugoSite) RebuildSite() bool {
+	cmd := exec.Command("hugo")
+	cmd.Dir = hugo.RootDir
+
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Println(string(out))
+		return false
+	}
+
+	fmt.Println(string(out))
 	return true
 }

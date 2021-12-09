@@ -1,4 +1,4 @@
-package hugoPopulator
+package models
 
 import "github.com/gosimple/slug"
 
