@@ -9,8 +9,10 @@ import (
 )
 
 type HugoSite struct {
-	SiteName string `json:"siteName"`
-	RootDir  string `json:"rootDir"`
+	SiteName        string   `json:"siteName"`
+	RootDir         string   `json:"rootDir"`
+	CollectionTypes []string `json:"collectionTypes"`
+	SingleTypes     []string `json:"singleTypes"`
 }
 
 func (hugo HugoSite) CreateEntry(payload WebhookPayload) bool {
@@ -49,8 +51,16 @@ func (hugo HugoSite) CreateEntry(payload WebhookPayload) bool {
 	return true
 }
 
-func (hugo HugoSite) RebuildSite() bool {
-	cmd := exec.Command("hugo")
+func (hugo HugoSite) RebuildSite(ignoreCache bool) bool {
+	var arg string
+
+	if ignoreCache {
+		arg = "--ignoreCache"
+	} else {
+		arg = ""
+	}
+
+	cmd := exec.Command("hugo", arg)
 	cmd.Dir = hugo.RootDir
 
 	out, err := cmd.Output()

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kovansky/strapi2hugo/models"
 	"github.com/kovansky/strapi2hugo/models/enums"
+	"github.com/kovansky/strapi2hugo/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -74,25 +75,48 @@ func buildHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if payload.Event == enums.Create {
-					fmt.Printf("Received %s event for %s site\n", payload.Event, site.SiteName)
+					if utils.Contains(site.CollectionTypes, payload.Model) {
+						fmt.Printf("Received %s event for %s site\n", payload.Event, site.SiteName)
 
-					// Try to write new file
-					if ok = site.CreateEntry(payload); !ok {
-						fmt.Println("Could not create entry")
-						w.WriteHeader(http.StatusInternalServerError)
+						// Try to write new file
+						if ok = site.CreateEntry(payload); !ok {
+							fmt.Println("Could not create entry")
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+
+						// Rebuild site without ignoring cache
+						if ok = site.RebuildSite(false); !ok {
+							fmt.Println("Building site error")
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
+
+						fmt.Println("Added entry and rebuilt website")
+						w.WriteHeader(http.StatusOK)
+						return
+					} else {
+						fmt.Printf("Event %s not implemented for model %s\n", payload.Event, payload.Model)
+						w.WriteHeader(http.StatusNotImplemented)
 						return
 					}
+				} else if payload.Event == enums.Update {
+					if utils.Contains(site.SingleTypes, payload.Model) {
+						// Rebuild site with ignoring cache
+						if ok = site.RebuildSite(true); !ok {
+							fmt.Println("Building site error")
+							w.WriteHeader(http.StatusInternalServerError)
+							return
+						}
 
-					// Rebuild site
-					if ok = site.RebuildSite(); !ok {
-						fmt.Println("Building site error")
-						w.WriteHeader(http.StatusInternalServerError)
+						fmt.Println("Rebuilt website")
+						w.WriteHeader(http.StatusOK)
+						return
+					} else {
+						fmt.Printf("Event %s not implemented for model %s\n", payload.Event, payload.Model)
+						w.WriteHeader(http.StatusNotImplemented)
 						return
 					}
-
-					fmt.Println("Added entry and rebuilt website")
-					w.WriteHeader(http.StatusOK)
-					return
 				} else {
 					fmt.Printf("Event %s not implemented\n", payload.Event)
 					w.WriteHeader(http.StatusNotImplemented)
