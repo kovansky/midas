@@ -1,5 +1,5 @@
-package main
+package strapi2hugo
 
 type EventHandler interface {
-    execute(payload WebhookPayload) (bool, error)
+	execute(payload WebhookPayload) (bool, error)
 }

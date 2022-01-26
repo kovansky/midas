@@ -1,4 +1,4 @@
-package main
+package strapi2hugo
 
 import (
 	"encoding/json"
