@@ -15,6 +15,8 @@ import (
 
 var config models.Config
 
+// ToDo: move to http package or so
+
 func main() {
 	fmt.Println("Reading config")
 	config = readConfig()

@@ -1,5 +1,7 @@
 package strapi2hugo
 
+// ToDo: Will be used?
+
 type EventHandler interface {
-	execute(payload WebhookPayload) (bool, error)
+	Execute(payload Payload) (bool, error)
 }

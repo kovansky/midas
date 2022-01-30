@@ -2,11 +2,14 @@ package models
 
 import (
 	"fmt"
+	"github.com/kovansky/strapi2hugo"
 	"html/template"
 	"os"
 	"os/exec"
 	"path"
 )
+
+// ToDo: move to hugo/site.go
 
 type HugoSite struct {
 	SiteName        string   `json:"siteName"`
@@ -20,7 +23,7 @@ func (hugo HugoSite) CreateEntry(payload WebhookPayload) bool {
 	defaultArchetype := path.Join(archetypesDir, "default.md")
 	outputDir := path.Join(hugo.RootDir, "content", payload.Model+"s")
 	title := fmt.Sprintf("%v", payload.Entry["Title"])
-	slug := createSlug(title)
+	slug := strapi2hugo.CreateSlug(title)
 	outputPath := path.Join(outputDir, slug+".html")
 
 	tmpl, err := template.ParseFiles(defaultArchetype)
