@@ -1,0 +1,110 @@
+[
+  {
+    "event": "entry.create",
+    "createdAt": "2022-01-19T21:54:27.755Z",
+    "model": "post",
+    "entry": {
+      "id": 3,
+      "Title": "Some test post good morning",
+      "Publication_date": "2022-01-19",
+      "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p>",
+      "createdAt": "2022-01-19T21:54:27.596Z",
+      "updatedAt": "2022-01-19T21:54:27.596Z",
+      "publishedAt": null
+    }
+  },
+  {
+    "event": "entry.update",
+    "createdAt": "2022-01-19T21:55:38.262Z",
+    "model": "post",
+    "entry": {
+      "id": 3,
+      "Title": "Some test post good morning",
+      "Publication_date": "2022-01-19",
+      "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chlebb</p>",
+      "createdAt": "2022-01-19T21:54:27.596Z",
+      "updatedAt": "2022-01-19T21:55:38.112Z",
+      "publishedAt": null
+    }
+  },
+  [
+    {
+      "group": "PUBLISH"
+    },
+    {
+      "event": "entry.publish",
+      "createdAt": "2022-01-19T21:56:22.950Z",
+      "model": "post",
+      "entry": {
+        "id": 3,
+        "Title": "Some test post good morning",
+        "Publication_date": "2022-01-19",
+        "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p><p>Dżems dobry</p>",
+        "createdAt": "2022-01-19T21:54:27.596Z",
+        "updatedAt": "2022-01-19T21:56:19.211Z",
+        "publishedAt": null
+      }
+    },
+    {
+      "event": "entry.update",
+      "createdAt": "2022-01-19T21:56:22.948Z",
+      "model": "post",
+      "entry": {
+        "id": 3,
+        "Title": "Some test post good morning",
+        "Publication_date": "2022-01-19",
+        "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p><p>Dżems dobry</p>",
+        "createdAt": "2022-01-19T21:54:27.596Z",
+        "updatedAt": "2022-01-19T21:56:22.844Z",
+        "publishedAt": "2022-01-19T21:56:22.842Z"
+      }
+    }
+  ],
+  [
+    {
+      "group": "UNPUBLISH"
+    },
+    {
+      "event": "entry.unpublish",
+      "createdAt": "2022-01-19T21:57:10.780Z",
+      "model": "post",
+      "entry": {
+        "id": 3,
+        "Title": "Some test post good morning",
+        "Publication_date": "2022-01-19",
+        "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p><p>Dżems dobry</p>",
+        "createdAt": "2022-01-19T21:54:27.596Z",
+        "updatedAt": "2022-01-19T21:56:22.844Z",
+        "publishedAt": "2022-01-19T21:56:22.842Z"
+      }
+    },
+    {
+      "event": "entry.update",
+      "createdAt": "2022-01-19T21:57:10.778Z",
+      "model": "post",
+      "entry": {
+        "id": 3,
+        "Title": "Some test post good morning",
+        "Publication_date": "2022-01-19",
+        "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p><p>Dżems dobry</p>",
+        "createdAt": "2022-01-19T21:54:27.596Z",
+        "updatedAt": "2022-01-19T21:57:10.637Z",
+        "publishedAt": null
+      }
+    }
+  ],
+  {
+    "event": "entry.delete",
+    "createdAt": "2022-01-19T21:57:52.918Z",
+    "model": "post",
+    "entry": {
+      "id": 3,
+      "Title": "Some test post good morning",
+      "Publication_date": "2022-01-19",
+      "Content": "<p>Test content</p><p>Good morning</p><p>i love you</p><p>I already posmarovaled<br>Twoją chleb</p><p>Dżems dobry</p>",
+      "createdAt": "2022-01-19T21:54:27.596Z",
+      "updatedAt": "2022-01-19T21:57:10.637Z",
+      "publishedAt": null
+    }
+  }
+]

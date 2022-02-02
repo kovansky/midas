@@ -1,4 +1,10 @@
-package utils
+package midas
+
+import "github.com/gosimple/slug"
+
+func CreateSlug(title string) string {
+	return slug.Make(title)
+}
 
 func Contains(haystack []string, needle string) bool {
 	for _, value := range haystack {
