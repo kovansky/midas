@@ -1,4 +1,4 @@
-package strapi2hugo
+package midas
 
 import "github.com/gosimple/slug"
 

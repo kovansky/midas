@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 )
 
-type event int64
+type Event int64
 
 const (
-	Undefined event = iota
+	Undefined Event = iota
 	Create
 	Update
 	Delete
@@ -16,7 +16,7 @@ const (
 	Unpublish
 )
 
-var toJson = map[event]string{
+var toJson = map[Event]string{
 	Undefined: "",
 	Create:    "entry.create",
 	Update:    "entry.update",
@@ -25,7 +25,7 @@ var toJson = map[event]string{
 	Unpublish: "entry.unpublish",
 }
 
-var toString = map[event]string{
+var toString = map[Event]string{
 	Undefined: "",
 	Create:    "Create",
 	Update:    "Update",
@@ -34,7 +34,7 @@ var toString = map[event]string{
 	Unpublish: "Unpublish",
 }
 
-var toId = map[string]event{
+var toId = map[string]Event{
 	"entry.create":    Create,
 	"entry.update":    Update,
 	"entry.delete":    Delete,
@@ -42,18 +42,18 @@ var toId = map[string]event{
 	"entry.unpublish": Unpublish,
 }
 
-func (event event) String() string {
+func (event Event) String() string {
 	return toString[event]
 }
 
-func (event event) MarshalJSON() ([]byte, error) {
+func (event Event) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
 	buffer.WriteString(toJson[event])
 	buffer.WriteString(`"`)
 	return buffer.Bytes(), nil
 }
 
-func (event *event) UnmarshalJSON(bytes []byte) error {
+func (event *Event) UnmarshalJSON(bytes []byte) error {
 	var str string
 	err := json.Unmarshal(bytes, &str)
 
@@ -61,6 +61,10 @@ func (event *event) UnmarshalJSON(bytes []byte) error {
 		return err
 	}
 
-	*event = toId[str]
+	var ok bool
+
+	if *event, ok = toId[str]; !ok {
+		*event = Undefined
+	}
 	return nil
 }

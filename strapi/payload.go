@@ -2,20 +2,20 @@ package strapi
 
 import (
 	"encoding/json"
-	"github.com/kovansky/strapi2hugo"
+	"github.com/kovansky/midas"
 	"time"
 )
 
-var _ strapi2hugo.Payload = (*Payload)(nil)
+var _ midas.Payload = (*Payload)(nil)
 
 type Payload struct {
-	event     event
+	event     Event
 	CreatedAt time.Time
 	Model     string
 	entry     map[string]interface{}
 }
 
-func ParsePayload(json []byte) (strapi2hugo.Payload, error) {
+func ParsePayload(json []byte) (midas.Payload, error) {
 	payload := Payload{}
 	err := payload.UnmarshalJSON(json)
 
@@ -50,7 +50,7 @@ func (p Payload) Raw() interface{} {
 
 func (p Payload) MarshalJSON() ([]byte, error) {
 	j, err := json.Marshal(struct {
-		Event     event                  `json:"event"`
+		Event     Event                  `json:"event"`
 		CreatedAt time.Time              `json:"createdAt"`
 		Model     string                 `json:"model"`
 		Entry     map[string]interface{} `json:"entry,omitempty"`
@@ -66,17 +66,22 @@ func (p Payload) MarshalJSON() ([]byte, error) {
 }
 
 func (p *Payload) UnmarshalJSON(bytes []byte) error {
-	var data map[string]interface{}
+	var data struct {
+		Event     Event                  `json:"event"`
+		CreatedAt time.Time              `json:"createdAt"`
+		Model     string                 `json:"model"`
+		Entry     map[string]interface{} `json:"entry,omitempty"`
+	}
 	err := json.Unmarshal(bytes, &data)
 	if err != nil {
 		return err
 	}
 
 	newPayload := Payload{
-		event:     data["event"].(event),
-		CreatedAt: data["createdAt"].(time.Time),
-		Model:     data["model"].(string),
-		entry:     data["entry"].(map[string]interface{}),
+		event:     data.Event,
+		CreatedAt: data.CreatedAt,
+		Model:     data.Model,
+		entry:     data.Entry,
 	}
 
 	*p = newPayload

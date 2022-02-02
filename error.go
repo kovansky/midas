@@ -1,4 +1,4 @@
-package strapi2hugo
+package midas
 
 import (
 	"errors"
@@ -8,6 +8,8 @@ import (
 const (
 	ErrUnauthorized = "unauthorized"
 	ErrInternal     = "internal"
+	ErrInvalid      = "invalid"
+	ErrUnaccepted   = "unaccepted"
 )
 
 // Error represents an application-specific error. App errors can be
@@ -59,6 +61,6 @@ func ErrorMessage(err error) string {
 func Errorf(code string, format string, args ...interface{}) *Error {
 	return &Error{
 		Code:    code,
-		Message: fmt.Sprintf(format, args),
+		Message: fmt.Sprintf(format, args...),
 	}
 }

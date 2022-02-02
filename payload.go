@@ -1,4 +1,4 @@
-package strapi2hugo
+package midas
 
 type Payload interface {
 	Event() string

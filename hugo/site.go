@@ -2,22 +2,21 @@ package hugo
 
 import (
 	"fmt"
-	"github.com/kovansky/strapi2hugo"
+	"github.com/kovansky/midas"
 	"html/template"
 	"os"
 	"os/exec"
 	"path"
 )
 
-var _ strapi2hugo.SiteService = (*SiteService)(nil)
+var _ midas.SiteService = (*SiteService)(nil)
 
 type SiteService struct {
-	Site strapi2hugo.Site
+	Site midas.Site
 }
 
-func NewSiteService(config interface{}) strapi2hugo.SiteService {
-	//TODO implement me
-	panic("implement me")
+func NewSiteService(config midas.Site) midas.SiteService {
+	return SiteService{Site: config}
 }
 
 func (SiteService) GetRegistry() (string, error) {
@@ -50,12 +49,12 @@ func (s SiteService) BuildSite(useCache bool) error {
 	return nil
 }
 
-func (s SiteService) CreateEntry(payload strapi2hugo.Payload) (string, error) {
+func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	archetypesDir := path.Join(s.Site.RootDir, "archetypes")
 	defaultArchetype := path.Join(archetypesDir, "default.md")
 	outputDir := path.Join(s.Site.RootDir, "content", payload.Metadata()["model"].(string)+"s")
 	title := fmt.Sprintf("%v", payload.Entry()["Title"])
-	slug := strapi2hugo.CreateSlug(title)
+	slug := midas.CreateSlug(title)
 	outputPath := path.Join(outputDir, slug+".html")
 
 	tmpl, err := template.ParseFiles(defaultArchetype)
@@ -83,12 +82,12 @@ func (s SiteService) CreateEntry(payload strapi2hugo.Payload) (string, error) {
 	return outputPath, nil
 }
 
-func (SiteService) UpdateEntry(payload strapi2hugo.Payload) (string, error) {
+func (SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (SiteService) RemoveEntry(payload strapi2hugo.Payload) (string, error) {
+func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
 	//TODO implement me
 	panic("implement me")
 }

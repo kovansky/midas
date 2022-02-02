@@ -1,6 +1,7 @@
-package strapi2hugo
+package midas
 
 type Config struct {
-	ListeningPort int             `json:"listeningPort"`
-	Sites         map[string]Site `json:"sites"` // [api key] => site
+	Domain string          `json:"domain"`
+	Addr   string          `json:"addr"`
+	Sites  map[string]Site `json:"sites"` // [api key] => site
 }

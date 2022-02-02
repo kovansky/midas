@@ -1,4 +1,4 @@
-package strapi2hugo
+package midas
 
 type Registry map[string]string
 

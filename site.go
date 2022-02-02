@@ -1,4 +1,4 @@
-package strapi2hugo
+package midas
 
 type Site struct {
 	SiteName        string   `json:"siteName"`
