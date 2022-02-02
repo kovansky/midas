@@ -11,7 +11,7 @@ type SiteService interface {
 	GetRegistry() (string, error)
 	CreateRegistry() (string, error)
 	BuildSite(useCache bool) error
-	CreateEntry(payload interface{}) (string, error)
-	UpdateEntry(payload interface{}) (string, error)
-	RemoveEntry(payload interface{}) (string, error)
+	CreateEntry(payload Payload) (string, error)
+	UpdateEntry(payload Payload) (string, error)
+	RemoveEntry(payload Payload) (string, error)
 }
