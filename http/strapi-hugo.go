@@ -22,6 +22,11 @@ func (s *Server) registerStrapiToHugoRoutes(r chi.Router) {
 func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	cfg := midas.SiteConfigFromContext(r.Context())
 
+	if cfg.Service != "hugo" {
+		Error(w, r, midas.Errorf(midas.ErrInvalid, "service mismatch: called %s while requested site is on %s", "hugo", cfg.Service))
+		return
+	}
+
 	jsonBody, err := io.ReadAll(r.Body)
 
 	if err != nil {

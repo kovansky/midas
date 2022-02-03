@@ -10,6 +10,7 @@ import (
 	"github.com/kovansky/midas/testing_utils"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -45,8 +46,12 @@ func SetUp(t *testing.T) *Server {
 	}, midas.Config{
 		Sites: map[string]midas.Site{
 			"test": {
+				Service:         "hugo",
 				CollectionTypes: []string{"post"},
 				SingleTypes:     []string{"homepage"},
+			},
+			"otherService": {
+				Service: "other",
 			},
 		},
 	})
@@ -92,6 +97,24 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 				"Response body json unmarshal error": {err, nil},
 				"Error response":                     {respError, midashttp.ErrorResponse{Error: "Invalid API key."}},
 			})
+		})
+	})
+
+	t.Run("Service mismatch", func(t *testing.T) {
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "otherService", "POST", "/strapi/hugo", bytes.NewReader([]byte(""))))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testing_utils.AssertEquals(t, resp.StatusCode, http.StatusBadRequest, "Status code")
+
+		jsonBody, _ := io.ReadAll(resp.Body)
+		var respError midashttp.ErrorResponse
+		err = json.Unmarshal(jsonBody, &respError)
+
+		testing_utils.AssertTable(t, map[string][]interface{}{
+			"Response body json unmarshal error": {err, nil},
+			"Error response":                     {strings.HasPrefix(respError.Error, "service mismatch:"), true},
 		})
 	})
 
