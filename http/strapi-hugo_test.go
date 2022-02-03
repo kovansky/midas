@@ -100,7 +100,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 		})
 	})
 
-	t.Run("Service mismatch", func(t *testing.T) {
+	t.Run("ServiceMismatch", func(t *testing.T) {
 		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "otherService", "POST", "/strapi/hugo", bytes.NewReader([]byte(""))))
 		if err != nil {
 			t.Fatal(err)
