@@ -118,6 +118,31 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 		})
 	})
 
+	t.Run("UnsupportedModel", func(t *testing.T) {
+		jsonPayload := []byte(`{
+    "event": "entry.create",
+    "createdAt": "2022-01-01T10:10:10.000Z",
+    "model": "review",
+    "entry": {
+      "id": 1,
+      "Title": "Test",
+      "Content": "Test",
+      "createdAt": "2022-01-01T10:10:10.000Z",
+      "updatedAt": "2022-01-01T10:10:10.000Z",
+      "publishedAt": null
+    }
+  }`)
+
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", "/strapi/hugo", bytes.NewReader(jsonPayload)))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testing_utils.AssertTable(t, map[string][]interface{}{
+			"Status code": {resp.StatusCode, http.StatusBadRequest},
+		})
+	})
+
 	t.Run("Create", func(t *testing.T) {
 		t.Run("Single", func(t *testing.T) {
 			jsonPayload := []byte(`{
@@ -173,14 +198,16 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 				"BuildSiteCounter":   {BuildSiteCounter, 1},
 			})
 		})
+	})
 
-		resetCounters()
+	resetCounters()
 
-		t.Run("UnsupportedModel", func(t *testing.T) {
+	t.Run("Update", func(t *testing.T) {
+		t.Run("Single", func(t *testing.T) {
 			jsonPayload := []byte(`{
-    "event": "entry.create",
+    "event": "entry.update",
     "createdAt": "2022-01-01T10:10:10.000Z",
-    "model": "review",
+    "model": "homepage",
     "entry": {
       "id": 1,
       "Title": "Test",
@@ -197,7 +224,8 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			}
 
 			testing_utils.AssertTable(t, map[string][]interface{}{
-				"Status code": {resp.StatusCode, http.StatusBadRequest},
+				"Status code":      {resp.StatusCode, http.StatusNoContent},
+				"BuildSiteCounter": {BuildSiteCounter, 1},
 			})
 		})
 	})
