@@ -41,7 +41,7 @@ func (s SiteService) BuildSite(useCache bool) error {
 	cmd := exec.Command("hugo", arg)
 	cmd.Dir = s.Site.RootDir
 
-	_, err := cmd.Output()
+	_, err := cmd.Output() // ToDo: display output somewhere
 	if err != nil {
 		return err
 	}

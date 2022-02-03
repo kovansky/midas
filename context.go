@@ -11,13 +11,13 @@ const (
 	userConfigContextKey = contextKey(iota + 1)
 )
 
-// NewContextWithUserConfig returns a new context with given config.
-func NewContextWithUserConfig(ctx context.Context, config interface{}) context.Context {
-	return context.WithValue(ctx, userConfigContextKey, config)
+// NewContextWithSiteConfig returns a new context with given config.
+func NewContextWithSiteConfig(ctx context.Context, site Site) context.Context {
+	return context.WithValue(ctx, userConfigContextKey, site)
 }
 
-// UserConfigFromContext returns current config from context.
-func UserConfigFromContext(ctx context.Context) interface{} {
-	config, _ := ctx.Value(userConfigContextKey).(interface{})
+// SiteConfigFromContext returns current config from context.
+func SiteConfigFromContext(ctx context.Context) Site {
+	config, _ := ctx.Value(userConfigContextKey).(Site)
 	return config
 }

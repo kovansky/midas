@@ -20,6 +20,8 @@ type Server struct {
 	router   *chi.Mux
 
 	Config midas.Config
+
+	SiteServices map[string]func(site midas.Site) midas.SiteService
 }
 
 func NewServer() *Server {
@@ -127,7 +129,7 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				return
 			}
 
-			r = r.WithContext(midas.NewContextWithUserConfig(r.Context(), cfg))
+			r = r.WithContext(midas.NewContextWithSiteConfig(r.Context(), cfg))
 
 			next.ServeHTTP(w, r)
 			return

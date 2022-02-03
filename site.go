@@ -3,6 +3,7 @@ package midas
 type Site struct {
 	SiteName        string   `json:"siteName"`
 	RootDir         string   `json:"rootDir"`
+	Service         string   `json:"service"`
 	CollectionTypes []string `json:"collectionTypes"`
 	SingleTypes     []string `json:"singleTypes"`
 }

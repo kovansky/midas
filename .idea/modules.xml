@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/strapi2hugo.iml" filepath="$PROJECT_DIR$/.idea/strapi2hugo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/midas.iml" filepath="$PROJECT_DIR$/.idea/midas.iml" />
     </modules>
   </component>
 </project>
