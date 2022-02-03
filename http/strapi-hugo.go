@@ -3,10 +3,8 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/kovansky/midas"
-	"github.com/kovansky/midas/hugo"
 	"github.com/kovansky/midas/strapi"
 	"io"
 	"net/http"
@@ -22,9 +20,7 @@ func (s *Server) registerStrapiToHugoRoutes(r chi.Router) {
 }
 
 func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
-	cfg := midas.UserConfigFromContext(r.Context()).(midas.Site)
-
-	fmt.Println("Received")
+	cfg := midas.SiteConfigFromContext(r.Context())
 
 	jsonBody, err := io.ReadAll(r.Body)
 
@@ -45,7 +41,7 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := &StrapiToHugoHandler{
-		HugoSite: hugo.NewSiteService(cfg),
+		HugoSite: s.SiteServices["hugo"](cfg),
 		Payload:  payload,
 	}
 
@@ -53,7 +49,7 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	cfg := midas.UserConfigFromContext(r.Context()).(midas.Site)
+	cfg := midas.SiteConfigFromContext(r.Context())
 
 	model := h.Payload.Metadata()["model"].(string)
 	var isSingle bool
@@ -71,13 +67,15 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	case strapi.Create.String():
 		if isSingle {
 			h.handleCreateSingle(w, r)
+			return
 		} else {
 			h.handleCreateCollection(w, r)
+			return
 		}
-		break
 	case strapi.Update.String():
 		if isSingle {
 			h.handleUpdateSingle(w, r)
+			return
 		}
 		break
 	default:

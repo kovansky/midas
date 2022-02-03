@@ -2,6 +2,8 @@ package mock
 
 import "github.com/kovansky/midas"
 
+var _ midas.SiteService = (*SiteService)(nil)
+
 type SiteService struct {
 	GetRegistryFn    func() (string, error)
 	CreateRegistryFn func() (string, error)
@@ -9,6 +11,10 @@ type SiteService struct {
 	CreateEntryFn    func(payload midas.Payload) (string, error)
 	UpdateEntryFn    func(payload midas.Payload) (string, error)
 	RemoveEntryFn    func(payload midas.Payload) (string, error)
+}
+
+func NewSiteService() *SiteService {
+	return &SiteService{}
 }
 
 func (s *SiteService) GetRegistry() (string, error) {

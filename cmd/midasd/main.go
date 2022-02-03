@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/http"
+	"github.com/kovansky/midas/hugo"
 	"io/ioutil"
 	"log"
 	"os"
@@ -133,6 +134,12 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 // before calling this function.
 func (m *Main) Run(_ context.Context) (err error) {
 	m.HTTPServer.Config = m.Config
+
+	m.HTTPServer.SiteServices = map[string]func(site midas.Site) midas.SiteService{
+		"hugo": func(site midas.Site) midas.SiteService {
+			return hugo.NewSiteService(site)
+		},
+	}
 
 	if err := m.HTTPServer.Open(); err != nil {
 		return err
