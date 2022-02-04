@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog"
 	"github.com/kovansky/midas"
 	"golang.org/x/crypto/acme/autocert"
 	"net"
@@ -29,6 +31,11 @@ func NewServer() *Server {
 		server: &http.Server{},
 		router: chi.NewRouter(),
 	}
+
+	logger := httplog.NewLogger("midas", httplog.Options{Concise: true})
+
+	s.router.Use(httplog.RequestLogger(logger))
+	s.router.Use(middleware.Heartbeat("/ping"))
 
 	s.server.Handler = http.HandlerFunc(s.router.ServeHTTP)
 

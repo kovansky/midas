@@ -2,19 +2,20 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/go-chi/httplog"
 	"github.com/kovansky/midas"
 	"net/http"
 )
 
 // Error prints, and optionally logs, an error message.
-func Error(w http.ResponseWriter, _ *http.Request, err error) {
+func Error(w http.ResponseWriter, r *http.Request, err error) {
 	// Extract error code and message
 	code, message := midas.ErrorCode(err), midas.ErrorMessage(err)
 
 	// Log internal errors
 	if code == midas.ErrInternal {
-		fmt.Printf("%+v", err)
+		log := httplog.LogEntry(r.Context())
+		log.Error().Msgf("internal server error: %+v", err)
 	}
 
 	jsonError, _ := json.Marshal(&ErrorResponse{Error: message})
