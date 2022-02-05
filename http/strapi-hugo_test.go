@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/kovansky/midas"
 	midashttp "github.com/kovansky/midas/http"
-	"github.com/kovansky/midas/mock"
 	"github.com/kovansky/midas/testing_utils"
 	"io"
 	"net/http"
@@ -14,58 +12,15 @@ import (
 	"testing"
 )
 
-var (
-	BuildSiteCounter   = 0
-	CreateEntryCounter = 0
-)
-
-func resetCounters() {
-	BuildSiteCounter = 0
-	CreateEntryCounter = 0
-}
-
-func SetUp(t *testing.T) *Server {
-	s := MustOpenServer(t, map[string]func(site midas.Site) midas.SiteService{
-		"hugo": func(_ midas.Site) midas.SiteService {
-			siteService := mock.NewSiteService()
-
-			siteService.BuildSiteFn = func(useCache bool) error {
-				BuildSiteCounter++
-
-				return nil
-			}
-
-			siteService.CreateEntryFn = func(_ midas.Payload) (string, error) {
-				CreateEntryCounter++
-
-				return "", nil
-			}
-
-			return siteService
-		},
-	}, midas.Config{
-		Sites: map[string]midas.Site{
-			"test": {
-				Service:         "hugo",
-				CollectionTypes: []string{"post"},
-				SingleTypes:     []string{"homepage"},
-			},
-			"otherService": {
-				Service: "other",
-			},
-		},
-	})
-
-	return s
-}
-
 func TestStrapiToHugoHandler_Handle(t *testing.T) {
+	endpoint := "/strapi/hugo"
+
 	s := SetUp(t)
 	defer MustCloseServer(t, s)
 
 	t.Run("Unauthenticated", func(t *testing.T) {
 		t.Run("NoKey", func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "", "POST", "/strapi/hugo", bytes.NewReader([]byte(""))))
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "", "POST", endpoint, bytes.NewReader([]byte(""))))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -82,7 +37,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			})
 		})
 		t.Run("IncorrectKey", func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "xyz", "POST", "/strapi/hugo", bytes.NewReader([]byte(""))))
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "xyz", "POST", endpoint, bytes.NewReader([]byte(""))))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -101,7 +56,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 	})
 
 	t.Run("ServiceMismatch", func(t *testing.T) {
-		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "otherService", "POST", "/strapi/hugo", bytes.NewReader([]byte(""))))
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "otherService", "POST", endpoint, bytes.NewReader([]byte(""))))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +88,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
     }
   }`)
 
-		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", "/strapi/hugo", bytes.NewReader(jsonPayload)))
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader(jsonPayload)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,7 +114,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
     }
   }`)
 
-			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", "/strapi/hugo", bytes.NewReader(jsonPayload)))
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader(jsonPayload)))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +142,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
     }
   }`)
 
-			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", "/strapi/hugo", bytes.NewReader(jsonPayload)))
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader(jsonPayload)))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -218,7 +173,7 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
     }
   }`)
 
-			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", "/strapi/hugo", bytes.NewReader(jsonPayload)))
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader(jsonPayload)))
 			if err != nil {
 				t.Fatal(err)
 			}

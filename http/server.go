@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog"
 	"github.com/kovansky/midas"
 	"golang.org/x/crypto/acme/autocert"
 	"net"
@@ -19,18 +21,35 @@ type Server struct {
 	server   *http.Server
 	router   *chi.Mux
 
+	// testing indicates that the server is running for tests.
+	testing bool
+
 	Config midas.Config
 
 	SiteServices map[string]func(site midas.Site) midas.SiteService
 }
 
-func NewServer() *Server {
+func NewServer(testing bool) *Server {
 	s := &Server{
-		server: &http.Server{},
-		router: chi.NewRouter(),
+		server:  &http.Server{},
+		router:  chi.NewRouter(),
+		testing: testing,
 	}
 
+	logger := httplog.NewLogger("midas", httplog.Options{Concise: true})
+
+	if !s.testing {
+		s.router.Use(httplog.RequestLogger(logger))
+	}
+
+	s.router.Use(middleware.Heartbeat("/ping"))
+
 	s.server.Handler = http.HandlerFunc(s.router.ServeHTTP)
+
+	// System routes - no authentication
+	s.router.Route("/system", func(router chi.Router) {
+		s.registerSystemRoutes(router)
+	})
 
 	s.router.Route("/", func(router chi.Router) {
 		router.Use(s.authenticate)
@@ -129,7 +148,11 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				return
 			}
 
-			r = r.WithContext(midas.NewContextWithSiteConfig(r.Context(), cfg))
+			r = r.WithContext(
+				midas.NewContextWithApiKey(
+					midas.NewContextWithSiteConfig(r.Context(), &cfg),
+					apiKey),
+			)
 
 			next.ServeHTTP(w, r)
 			return
