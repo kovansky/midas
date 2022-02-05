@@ -219,8 +219,6 @@ func rollbarError(ctx context.Context, err error, args ...interface{}) {
 		rollbar.ClearPerson()
 	}
 
-	log.Printf("error: %+v\n", err)
-
 	if len(args) > 0 {
 		rollbar.Error(append([]interface{}{err}, args...)...)
 	} else {

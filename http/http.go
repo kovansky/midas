@@ -17,6 +17,8 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 		log := httplog.LogEntry(r.Context())
 		log.Error().Msgf("internal server error: %+v", err)
 		midas.ReportError(r.Context(), err, r)
+
+		message = "Internal server error" // We don't want the error to be displayed for the enduser
 	}
 
 	jsonError, _ := json.Marshal(&ErrorResponse{Error: message})

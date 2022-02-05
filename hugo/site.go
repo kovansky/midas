@@ -20,12 +20,12 @@ func NewSiteService(config midas.Site) midas.SiteService {
 }
 
 func (SiteService) GetRegistry() (string, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (SiteService) CreateRegistry() (string, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
@@ -41,9 +41,9 @@ func (s SiteService) BuildSite(useCache bool) error {
 	cmd := exec.Command("hugo", arg)
 	cmd.Dir = s.Site.RootDir
 
-	_, err := cmd.Output() // ToDo: display output somewhere
+	out, err := cmd.Output()
 	if err != nil {
-		return err
+		return midas.Errorf(midas.ErrInternal, "hugo build errored: %s\ncommand output: %s", err, out)
 	}
 
 	return nil
@@ -83,11 +83,11 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 }
 
 func (SiteService) UpdateEntry(payload midas.Payload) (string, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 
 func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
