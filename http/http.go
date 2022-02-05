@@ -16,6 +16,7 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 	if code == midas.ErrInternal {
 		log := httplog.LogEntry(r.Context())
 		log.Error().Msgf("internal server error: %+v", err)
+		midas.ReportError(r.Context(), err, r)
 	}
 
 	jsonError, _ := json.Marshal(&ErrorResponse{Error: message})

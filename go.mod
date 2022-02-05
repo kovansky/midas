@@ -6,6 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/httplog v0.2.1
 	github.com/gosimple/slug v1.11.2
+	github.com/rollbar/rollbar-go v1.4.2
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
 )
 

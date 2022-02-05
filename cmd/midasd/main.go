@@ -8,6 +8,7 @@ import (
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/hugo"
+	"github.com/rollbar/rollbar-go"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,8 +18,18 @@ import (
 	"strings"
 )
 
+var (
+	commit      string
+	version     string
+	environment string
+)
+
 // main is the entry point of the application binary.
 func main() {
+	// Propagate build info
+	midas.Commit = commit
+	midas.Version = version
+
 	// Setup signal handlers
 	ctx, cancel := context.WithCancel(context.Background())
 	c := make(chan os.Signal, 1)
@@ -36,10 +47,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Check if environment wasn't set in env variables (instead of flag)
+	if os.Getenv("MIDAS_ENV") != "" {
+		environment = os.Getenv("MIDAS_ENV")
+	}
+
 	// Execute program
 	if err := m.Run(ctx); err != nil {
 		_ = m.Close()
 		_, _ = fmt.Fprintln(os.Stderr, err)
+		midas.ReportError(ctx, err)
 		os.Exit(1)
 	}
 
@@ -108,6 +125,7 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 	// Only config path flag
 	fs := flag.NewFlagSet("midasd", flag.ContinueOnError)
 	fs.StringVar(&m.ConfigPath, "config", defaultConfigPath, "config path")
+	fs.StringVar(&environment, "env", "development", "app environment (development, production)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -133,6 +151,17 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 // Run executes the program. The configuration should already be set up
 // before calling this function.
 func (m *Main) Run(_ context.Context) (err error) {
+	if m.Config.RollbarToken != "" {
+		rollbar.SetToken(m.Config.RollbarToken)
+		rollbar.SetEnvironment(environment)
+		rollbar.SetCodeVersion(version)
+		rollbar.SetServerRoot("github.com/kovansky/midas")
+
+		midas.ReportError = rollbarError
+
+		log.Println("rollbar error tracking enabled")
+	}
+
 	m.HTTPServer.Config = m.Config
 
 	m.HTTPServer.SiteServices = map[string]func(site midas.Site) midas.SiteService{
@@ -176,4 +205,31 @@ func expand(path string) (string, error) {
 	}
 
 	return filepath.Join(usr.HomeDir, strings.TrimPrefix(path, "~"+string(os.PathSeparator))), nil
+}
+
+// rollbarError reports internal errors to rollbar.
+func rollbarError(ctx context.Context, err error, args ...interface{}) {
+	if midas.ErrorCode(err) != midas.ErrInternal {
+		return
+	}
+
+	if key := midas.ApiKeyFromContext(ctx); key != "" {
+		rollbar.SetPerson(key, "", "")
+	} else {
+		rollbar.ClearPerson()
+	}
+
+	log.Printf("error: %+v\n", err)
+
+	if len(args) > 0 {
+		rollbar.Error(append([]interface{}{err}, args...)...)
+	} else {
+		rollbar.Error(err)
+	}
+}
+
+// rollbarPanic reports panics to rollbar. Maybe will be used in future.
+func _(err interface{}) {
+	log.Printf("panic: %+v\n", err)
+	rollbar.LogPanic(err, true)
 }

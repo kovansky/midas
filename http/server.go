@@ -136,7 +136,11 @@ func (s *Server) authenticate(next http.Handler) http.Handler {
 				return
 			}
 
-			r = r.WithContext(midas.NewContextWithSiteConfig(r.Context(), cfg))
+			r = r.WithContext(
+				midas.NewContextWithApiKey(
+					midas.NewContextWithSiteConfig(r.Context(), &cfg),
+					apiKey),
+			)
 
 			next.ServeHTTP(w, r)
 			return
