@@ -39,6 +39,11 @@ func NewServer() *Server {
 
 	s.server.Handler = http.HandlerFunc(s.router.ServeHTTP)
 
+	// System routes - no authentication
+	s.router.Route("/system", func(router chi.Router) {
+		s.registerSystemRoutes(router)
+	})
+
 	s.router.Route("/", func(router chi.Router) {
 		router.Use(s.authenticate)
 

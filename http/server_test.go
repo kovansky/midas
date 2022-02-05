@@ -4,10 +4,21 @@ import (
 	"context"
 	"github.com/kovansky/midas"
 	midashttp "github.com/kovansky/midas/http"
+	"github.com/kovansky/midas/mock"
 	"io"
 	"net/http"
 	"testing"
 )
+
+var (
+	BuildSiteCounter   = 0
+	CreateEntryCounter = 0
+)
+
+func resetCounters() {
+	BuildSiteCounter = 0
+	CreateEntryCounter = 0
+}
 
 // Server represents a test wrapper for midashttp.Server.
 // It attaches mocks to the server & initializes on random port.
@@ -19,6 +30,9 @@ type Server struct {
 // Fail on error.
 func MustOpenServer(tb testing.TB, siteServices map[string]func(site midas.Site) midas.SiteService, config midas.Config) *Server {
 	tb.Helper()
+
+	midas.Commit = "testing"
+	midas.Version = "testing"
 
 	// Init wrapper and set test config settings.
 	s := &Server{Server: midashttp.NewServer()}
@@ -57,4 +71,39 @@ func (s *Server) MustNewRequest(tb testing.TB, _ context.Context, apiKey, method
 	}
 
 	return r
+}
+
+func SetUp(t *testing.T) *Server {
+	s := MustOpenServer(t, map[string]func(site midas.Site) midas.SiteService{
+		"hugo": func(_ midas.Site) midas.SiteService {
+			siteService := mock.NewSiteService()
+
+			siteService.BuildSiteFn = func(useCache bool) error {
+				BuildSiteCounter++
+
+				return nil
+			}
+
+			siteService.CreateEntryFn = func(_ midas.Payload) (string, error) {
+				CreateEntryCounter++
+
+				return "", nil
+			}
+
+			return siteService
+		},
+	}, midas.Config{
+		Sites: map[string]midas.Site{
+			"test": {
+				Service:         "hugo",
+				CollectionTypes: []string{"post"},
+				SingleTypes:     []string{"homepage"},
+			},
+			"otherService": {
+				Service: "other",
+			},
+		},
+	})
+
+	return s
 }
