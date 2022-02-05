@@ -105,7 +105,7 @@ func NewMain() *Main {
 		Config:     defaultConfig(),
 		ConfigPath: defaultConfigPath,
 
-		HTTPServer: http.NewServer(),
+		HTTPServer: http.NewServer(false),
 	}
 }
 

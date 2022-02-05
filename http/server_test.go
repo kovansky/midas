@@ -35,7 +35,7 @@ func MustOpenServer(tb testing.TB, siteServices map[string]func(site midas.Site)
 	midas.Version = "testing"
 
 	// Init wrapper and set test config settings.
-	s := &Server{Server: midashttp.NewServer()}
+	s := &Server{Server: midashttp.NewServer(true)}
 
 	s.SiteServices = siteServices
 	s.Config = config

@@ -21,20 +21,27 @@ type Server struct {
 	server   *http.Server
 	router   *chi.Mux
 
+	// testing indicates that the server is running for tests.
+	testing bool
+
 	Config midas.Config
 
 	SiteServices map[string]func(site midas.Site) midas.SiteService
 }
 
-func NewServer() *Server {
+func NewServer(testing bool) *Server {
 	s := &Server{
-		server: &http.Server{},
-		router: chi.NewRouter(),
+		server:  &http.Server{},
+		router:  chi.NewRouter(),
+		testing: testing,
 	}
 
 	logger := httplog.NewLogger("midas", httplog.Options{Concise: true})
 
-	s.router.Use(httplog.RequestLogger(logger))
+	if !s.testing {
+		s.router.Use(httplog.RequestLogger(logger))
+	}
+
 	s.router.Use(middleware.Heartbeat("/ping"))
 
 	s.server.Handler = http.HandlerFunc(s.router.ServeHTTP)
