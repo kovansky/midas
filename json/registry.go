@@ -111,22 +111,25 @@ func (r *RegistryService) Flush() error {
 	return nil
 }
 
+// CreateEntry appends a new id to filename mapping to the registry.
 func (r *RegistryService) CreateEntry(id, filename string) error {
-	// TODO implement me
-	panic("implement me")
+	r.registry[id] = filename
+	return nil
 }
 
+// ReadEntry returns filename attached to given id from the registry.
 func (r *RegistryService) ReadEntry(id string) (string, error) {
-	// TODO implement me
-	panic("implement me")
+	return r.registry[id], nil
 }
 
+// UpdateEntry sets a new filename for the id in the registry.
+// Equivalent of calling CreateEntry in this case.
 func (r *RegistryService) UpdateEntry(id, newFilename string) error {
-	// TODO implement me
-	panic("implement me")
+	return r.CreateEntry(id, newFilename)
 }
 
+// DeleteEntry removes entry with given id from the registry.
 func (r *RegistryService) DeleteEntry(id string) error {
-	// TODO implement me
-	panic("implement me")
+	delete(r.registry, r.registry[id])
+	return nil
 }
