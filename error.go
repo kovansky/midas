@@ -10,6 +10,7 @@ const (
 	ErrInternal     = "internal"
 	ErrInvalid      = "invalid"
 	ErrUnaccepted   = "unaccepted"
+	ErrRegistry     = "registry"
 )
 
 // Error represents an application-specific error. App errors can be
