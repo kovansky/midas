@@ -1,8 +1,16 @@
 package midas
 
+// Registry type is used to hold data from registries. It's structure is
+// Id => Filename. So from this JSON:
+//  {
+//    "1": "sample-post.html"
+//  }
+// "1" would be a key and "sample-post.html" would be a value.
 type Registry map[string]string
 
 type RegistryService interface {
+	OpenStorage() error
+	CloseStorage()
 	CreateStorage() error
 	RemoveStorage() error
 	Flush() error
