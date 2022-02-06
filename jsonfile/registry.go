@@ -1,4 +1,4 @@
-package json
+package jsonfile
 
 import (
 	"encoding/json"
@@ -46,6 +46,11 @@ func (r *RegistryService) OpenStorage() error {
 
 // readStorage reads the file content and unmarshals it into the registry.
 func (r *RegistryService) readStorage() error {
+	// Move cursor to the beginning of file
+	if _, err := r.file.Seek(0, 0); err != nil {
+		return err
+	}
+
 	data, err := io.ReadAll(r.file)
 	if err != nil {
 		return err
@@ -113,23 +118,39 @@ func (r *RegistryService) Flush() error {
 
 // CreateEntry appends a new id to filename mapping to the registry.
 func (r *RegistryService) CreateEntry(id, filename string) error {
+	if _, err := r.ReadEntry(id); err == nil {
+		return midas.Errorf(midas.ErrRegistry, "already exists")
+	}
+
 	r.registry[id] = filename
 	return nil
 }
 
 // ReadEntry returns filename attached to given id from the registry.
 func (r *RegistryService) ReadEntry(id string) (string, error) {
+	if r.registry[id] == "" {
+		return "", midas.Errorf(midas.ErrRegistry, "doesn't exist")
+	}
+
 	return r.registry[id], nil
 }
 
 // UpdateEntry sets a new filename for the id in the registry.
-// Equivalent of calling CreateEntry in this case.
 func (r *RegistryService) UpdateEntry(id, newFilename string) error {
-	return r.CreateEntry(id, newFilename)
+	if _, err := r.ReadEntry(id); err != nil {
+		return midas.Errorf(midas.ErrRegistry, "doesn't exist")
+	}
+
+	r.registry[id] = newFilename
+	return nil
 }
 
 // DeleteEntry removes entry with given id from the registry.
 func (r *RegistryService) DeleteEntry(id string) error {
-	delete(r.registry, r.registry[id])
+	if _, err := r.ReadEntry(id); err != nil {
+		return midas.Errorf(midas.ErrRegistry, "doesn't exist")
+	}
+
+	delete(r.registry, id)
 	return nil
 }
