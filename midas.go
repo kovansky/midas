@@ -8,6 +8,8 @@ import (
 var (
 	Commit  string
 	Version string
+
+	RegistryServices map[string]func(site Site) RegistryService
 )
 
 // ReportError is used to notify external services of error.

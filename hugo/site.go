@@ -13,10 +13,29 @@ var _ midas.SiteService = (*SiteService)(nil)
 
 type SiteService struct {
 	Site midas.Site
+
+	registry midas.RegistryService
 }
 
-func NewSiteService(config midas.Site) midas.SiteService {
-	return SiteService{Site: config}
+func NewSiteService(config midas.Site) (midas.SiteService, error) {
+	if _, ok := midas.RegistryServices[config.Registry.Type]; !ok {
+		return nil, midas.Errorf(midas.ErrSiteConfig, "requested registry type %s does not exit", config.Registry.Type)
+	}
+
+	siteService := SiteService{
+		Site:     config,
+		registry: midas.RegistryServices[config.Registry.Type](config),
+	}
+
+	err := siteService.registry.OpenStorage()
+	if err != nil {
+		err = siteService.registry.CreateStorage()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return siteService, nil
 }
 
 func (SiteService) GetRegistry() (string, error) {

@@ -38,6 +38,7 @@ var codes = map[string]int{
 	midas.ErrUnaccepted:   http.StatusBadRequest,
 	midas.ErrInternal:     http.StatusInternalServerError,
 	midas.ErrRegistry:     http.StatusInternalServerError,
+	midas.ErrSiteConfig:   http.StatusInternalServerError,
 }
 
 func ErrorStatusCode(code string) int {

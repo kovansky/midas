@@ -11,6 +11,7 @@ const (
 	ErrInvalid      = "invalid"
 	ErrUnaccepted   = "unaccepted"
 	ErrRegistry     = "registry"
+	ErrSiteConfig   = "siteconfig"
 )
 
 // Error represents an application-specific error. App errors can be

@@ -26,7 +26,7 @@ type Server struct {
 
 	Config midas.Config
 
-	SiteServices map[string]func(site midas.Site) midas.SiteService
+	SiteServices map[string]func(site midas.Site) (midas.SiteService, error)
 }
 
 func NewServer(testing bool) *Server {

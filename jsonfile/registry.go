@@ -17,7 +17,7 @@ type RegistryService struct {
 	Site midas.Site
 }
 
-func NewRegistryService(site midas.Site) *RegistryService {
+func NewRegistryService(site midas.Site) midas.RegistryService {
 	filename := "midas-registry.json"
 
 	return &RegistryService{
