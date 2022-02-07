@@ -135,9 +135,81 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	return outputPath, nil
 }
 
-func (SiteService) UpdateEntry(payload midas.Payload) (string, error) {
-	// TODO implement me
-	panic("implement me")
+func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
+	// Set archetype path
+	modelName := payload.Metadata()["model"].(string)
+	model, _ := s.getModel(modelName)
+	archetypePath := model.ArchetypePath
+	if !path.IsAbs(archetypePath) {
+		archetypePath = path.Join(s.Site.RootDir, archetypePath)
+	}
+
+	// Check if archetype exists
+	if !fileExists(archetypePath) {
+		return "", midas.Errorf(midas.ErrSiteConfig, "archetype for model %s does not exist", modelName)
+	}
+
+	// Get old path
+	entryId := s.EntryId(payload)
+	oldPath, _ := s.registry.ReadEntry(entryId)
+	outputDir := path.Dir(oldPath)
+
+	// Check if output dir exists, attempt to create it if it doesn't
+	if !fileExists(outputDir) {
+		err := os.Mkdir(outputDir, 0775)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Format new output filename
+	title := fmt.Sprintf("%v", payload.Entry()["Title"])
+	slug := midas.CreateSlug(title)
+	outputPath := path.Join(outputDir, slug+".html")
+
+	// Check if output filename is free (excluding situation where name doesn't changed)
+	if fileExists(outputPath) && path.Base(outputPath) != path.Base(oldPath) {
+		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", path.Base(outputPath))
+	}
+
+	// Remove old entry if exists
+	if fileExists(oldPath) {
+		_ = os.Remove(oldPath)
+	}
+
+	// Read archetype file
+	tmpl, err := template.ParseFiles(archetypePath)
+	if err != nil {
+		return "", err
+	}
+
+	// Create output file
+	output, err := os.Create(outputPath)
+	defer func(output *os.File) {
+		_ = output.Close()
+	}(output)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Parse archetype and write it to output
+	err = tmpl.Execute(output, struct {
+		Entry map[string]interface{}
+	}{payload.Entry()})
+	if err != nil {
+		return "", err
+	}
+
+	// Update entry in registry
+	if err = s.registry.UpdateEntry(entryId, outputPath); err != nil {
+		return outputPath, err
+	}
+	if err = s.registry.Flush(); err != nil {
+		return outputPath, err
+	}
+
+	return outputPath, nil
 }
 
 func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
