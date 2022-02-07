@@ -64,6 +64,7 @@ func (s SiteService) BuildSite(useCache bool) error {
 }
 
 func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
+	// Set archetype path and output directory
 	modelName := payload.Metadata()["model"].(string)
 	model, _ := s.getModel(modelName)
 	archetypePath := model.ArchetypePath
@@ -75,9 +76,11 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 		outputDir = path.Join(s.Site.RootDir, outputDir)
 	}
 
+	// Check if archetype exists
 	if !fileExists(archetypePath) {
 		return "", midas.Errorf(midas.ErrSiteConfig, "archetype for model %s does not exist", modelName)
 	}
+	// Check if output dir exists, attempt to create it if it doesn't
 	if !fileExists(outputDir) {
 		err := os.Mkdir(outputDir, 0775)
 		if err != nil {
@@ -85,20 +88,23 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 		}
 	}
 
+	// Format output filename
 	title := fmt.Sprintf("%v", payload.Entry()["Title"])
 	slug := midas.CreateSlug(title)
 	outputPath := path.Join(outputDir, slug+".html")
 
+	// Check if output filename is free
 	if fileExists(outputPath) {
 		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", path.Base(outputPath))
 	}
 
+	// Read archetype file
 	tmpl, err := template.ParseFiles(archetypePath)
-
 	if err != nil {
 		return "", err
 	}
 
+	// Create output file
 	output, err := os.Create(outputPath)
 	defer func(output *os.File) {
 		_ = output.Close()
@@ -108,11 +114,22 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 		return "", err
 	}
 
+	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
 		Entry map[string]interface{}
 	}{payload.Entry()})
 	if err != nil {
 		return "", err
+	}
+
+	// Add entry to registry
+	entryId := s.EntryId(payload)
+
+	if err = s.registry.CreateEntry(entryId, outputPath); err != nil {
+		return outputPath, err
+	}
+	if err = s.registry.Flush(); err != nil {
+		return outputPath, err
 	}
 
 	return outputPath, nil
@@ -126,6 +143,10 @@ func (SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
 	// TODO implement me
 	panic("implement me")
+}
+
+func (s SiteService) EntryId(payload midas.Payload) string {
+	return fmt.Sprintf("%s-%d", payload.Metadata()["model"].(string), payload.Entry()["id"].(int))
 }
 
 // getModel returns a model from any type (collection or single), and true if model is single or false otherwise.
