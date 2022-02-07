@@ -1,6 +1,7 @@
 package hugo
 
 import (
+	"errors"
 	"fmt"
 	"github.com/kovansky/midas"
 	"html/template"
@@ -63,14 +64,36 @@ func (s SiteService) BuildSite(useCache bool) error {
 }
 
 func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
-	archetypesDir := path.Join(s.Site.RootDir, "archetypes")
-	defaultArchetype := path.Join(archetypesDir, "default.md")
-	outputDir := path.Join(s.Site.RootDir, "content", payload.Metadata()["model"].(string)+"s")
+	modelName := payload.Metadata()["model"].(string)
+	model, _ := s.getModel(modelName)
+	archetypePath := model.ArchetypePath
+	if !path.IsAbs(archetypePath) {
+		archetypePath = path.Join(s.Site.RootDir, archetypePath)
+	}
+	outputDir := model.OutputDir
+	if !path.IsAbs(outputDir) {
+		outputDir = path.Join(s.Site.RootDir, outputDir)
+	}
+
+	if !fileExists(archetypePath) {
+		return "", midas.Errorf(midas.ErrSiteConfig, "archetype for model %s does not exist", modelName)
+	}
+	if !fileExists(outputDir) {
+		err := os.Mkdir(outputDir, 0775)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	title := fmt.Sprintf("%v", payload.Entry()["Title"])
 	slug := midas.CreateSlug(title)
 	outputPath := path.Join(outputDir, slug+".html")
 
-	tmpl, err := template.ParseFiles(defaultArchetype)
+	if fileExists(outputPath) {
+		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", path.Base(outputPath))
+	}
+
+	tmpl, err := template.ParseFiles(archetypePath)
 
 	if err != nil {
 		return "", err
@@ -103,4 +126,21 @@ func (SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
 	// TODO implement me
 	panic("implement me")
+}
+
+// getModel returns a model from any type (collection or single), and true if model is single or false otherwise.
+func (s SiteService) getModel(model string) (*midas.Model, bool) {
+	if m, ok := s.Site.CollectionTypes[model]; ok {
+		return &m, false
+	} else if m, ok := s.Site.SingleTypes[model]; ok {
+		return &m, true
+	}
+
+	return nil, true
+}
+
+// fileExists return true if path exists or false otherwise
+func fileExists(filename string) bool {
+	_, err := os.Stat(filename)
+	return !errors.Is(err, os.ErrNotExist)
 }

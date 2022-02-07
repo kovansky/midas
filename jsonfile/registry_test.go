@@ -9,7 +9,7 @@ import (
 
 var (
 	site = midas.Site{RootDir: "./"}
-	r    = NewRegistryService(site)
+	r    = NewRegistryService(site).(*RegistryService)
 )
 
 func TestRegistryService_OpenStorage(t *testing.T) {

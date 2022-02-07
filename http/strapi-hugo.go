@@ -50,8 +50,13 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hugoSite, err := s.SiteServices["hugo"](*cfg)
+	if err != nil {
+		Error(w, r, err)
+	}
+
 	handler := &StrapiToHugoHandler{
-		HugoSite: s.SiteServices["hugo"](*cfg),
+		HugoSite: hugoSite,
 		Payload:  payload,
 	}
 
@@ -64,9 +69,9 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	model := h.Payload.Metadata()["model"].(string)
 	var isSingle bool
 
-	if midas.Contains(cfg.SingleTypes, model) {
+	if _, ok := cfg.SingleTypes[model]; ok {
 		isSingle = true
-	} else if midas.Contains(cfg.CollectionTypes, model) {
+	} else if _, ok := cfg.CollectionTypes[model]; ok {
 		isSingle = false
 	} else {
 		Error(w, r, midas.Errorf(midas.ErrUnaccepted, "model %s is not accepted", model))

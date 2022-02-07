@@ -8,8 +8,13 @@ type Site struct {
 		Type     string `json:"type"`
 		Location string `json:"location"`
 	} `json:"registry"`
-	CollectionTypes []string `json:"collectionTypes"`
-	SingleTypes     []string `json:"singleTypes"`
+	CollectionTypes map[string]Model `json:"collectionTypes"`
+	SingleTypes     map[string]Model `json:"singleTypes"`
+}
+
+type Model struct {
+	ArchetypePath string `json:"archetypePath,omitempty"`
+	OutputDir     string `json:"outputDir,omitempty"`
 }
 
 type SiteService interface {
