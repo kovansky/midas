@@ -38,14 +38,8 @@ func NewSiteService(config midas.Site) (midas.SiteService, error) {
 	return siteService, nil
 }
 
-func (SiteService) GetRegistry() (string, error) {
-	// TODO implement me
-	panic("implement me")
-}
-
-func (SiteService) CreateRegistry() (string, error) {
-	// TODO implement me
-	panic("implement me")
+func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
+	return s.registry, nil
 }
 
 func (s SiteService) BuildSite(useCache bool) error {

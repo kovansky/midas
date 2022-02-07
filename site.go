@@ -13,7 +13,7 @@ type Site struct {
 }
 
 type SiteService interface {
-	GetRegistry() (string, error)
+	GetRegistryService() (RegistryService, error)
 	BuildSite(useCache bool) error
 	CreateEntry(payload Payload) (string, error)
 	UpdateEntry(payload Payload) (string, error)
