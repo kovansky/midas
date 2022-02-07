@@ -91,6 +91,8 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		if isSingle {
 			h.handleUpdateSingle(w, r)
 			return
+		} else {
+			h.handleUpdateCollection(w, r)
 		}
 		break
 	default:
@@ -102,9 +104,7 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
-	err := h.HugoSite.BuildSite(true)
-
-	if err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -113,31 +113,35 @@ func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.R
 }
 
 func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *http.Request) {
-	_, err := h.HugoSite.CreateEntry(h.Payload)
-
-	if err != nil {
+	if _, err := h.HugoSite.CreateEntry(h.Payload); err != nil {
 		Error(w, r, err)
 		return
 	}
 
-	err = h.HugoSite.BuildSite(true)
-
-	if err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
-
-	// ToDo: add to registry
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.Request) {
-	err := h.HugoSite.BuildSite(false)
-
-	if err != nil {
+	if err := h.HugoSite.BuildSite(false); err != nil {
 		Error(w, r, err)
 		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateEntry(h.Payload); err != nil {
+		Error(w, r, err)
+	}
+
+	if err := h.HugoSite.BuildSite(false); err != nil {
+		Error(w, r, err)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
