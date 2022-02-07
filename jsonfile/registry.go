@@ -9,7 +9,6 @@ import (
 )
 
 type RegistryService struct {
-	filename string
 	filePath string
 	file     *os.File
 	registry midas.Registry
@@ -18,11 +17,8 @@ type RegistryService struct {
 }
 
 func NewRegistryService(site midas.Site) midas.RegistryService {
-	filename := "midas-registry.json"
-
 	return &RegistryService{
-		filename: filename,
-		filePath: path.Join(site.RootDir, filename),
+		filePath: path.Clean(site.Registry.Location),
 		Site:     site,
 	}
 }
