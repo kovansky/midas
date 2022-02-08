@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	site = midas.Site{RootDir: "./"}
+	site = midas.Site{RootDir: "./", Registry: midas.RegistrySettings{Type: "jsonfile", Location: "./test-registry.json"}}
 	r    = NewRegistryService(site).(*RegistryService)
 )
 
