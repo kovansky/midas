@@ -11,13 +11,34 @@ import (
 )
 
 var (
-	BuildSiteCounter   = 0
-	CreateEntryCounter = 0
+	MockSiteCounters = map[string]int{
+		"GetRegistryService": 0,
+		"BuildSite":          0,
+		"CreateEntry":        0,
+		"UpdateEntry":        0,
+		"DeleteEntry":        0,
+	}
+	MockRegistryCounters = map[string]int{
+		"OpenStorage":   0,
+		"CloseStorage":  0,
+		"CreateStorage": 0,
+		"RemoveStorage": 0,
+		"Flush":         0,
+		"CreateEntry":   0,
+		"ReadEntry":     0,
+		"UpdateEntry":   0,
+		"DeleteEntry":   0,
+	}
 )
 
 func resetCounters() {
-	BuildSiteCounter = 0
-	CreateEntryCounter = 0
+	for key := range MockSiteCounters {
+		MockSiteCounters[key] = 0
+	}
+
+	for key := range MockRegistryCounters {
+		MockRegistryCounters[key] = 0
+	}
 }
 
 // Server represents a test wrapper for midashttp.Server.
@@ -28,11 +49,15 @@ type Server struct {
 
 // MustOpenServer is a test helper function for starting a new test HTTP server.
 // Fail on error.
-func MustOpenServer(tb testing.TB, siteServices map[string]func(site midas.Site) midas.SiteService, config midas.Config) *Server {
+func MustOpenServer(tb testing.TB, siteServices map[string]func(site midas.Site) (midas.SiteService, error), config midas.Config) *Server {
 	tb.Helper()
 
 	midas.Commit = "testing"
 	midas.Version = "testing"
+
+	midas.RegistryServices = map[string]func(site midas.Site) midas.RegistryService{
+		"mock": prepareMockRegistryService,
+	}
 
 	// Init wrapper and set test config settings.
 	s := &Server{Server: midashttp.NewServer(true)}
@@ -74,30 +99,51 @@ func (s *Server) MustNewRequest(tb testing.TB, _ context.Context, apiKey, method
 }
 
 func SetUp(t *testing.T) *Server {
-	s := MustOpenServer(t, map[string]func(site midas.Site) midas.SiteService{
-		"hugo": func(_ midas.Site) midas.SiteService {
+	s := MustOpenServer(t, map[string]func(site midas.Site) (midas.SiteService, error){
+		"hugo": func(site midas.Site) (midas.SiteService, error) {
 			siteService := mock.NewSiteService()
 
 			siteService.BuildSiteFn = func(useCache bool) error {
-				BuildSiteCounter++
+				MockSiteCounters["BuildSite"]++
 
 				return nil
 			}
-
 			siteService.CreateEntryFn = func(_ midas.Payload) (string, error) {
-				CreateEntryCounter++
+				MockSiteCounters["CreateEntry"]++
 
 				return "", nil
 			}
+			siteService.UpdateEntryFn = func(_ midas.Payload) (string, error) {
+				MockSiteCounters["UpdateEntry"]++
 
-			return siteService
+				return "", nil
+			}
+			siteService.DeleteEntryFn = func(_ midas.Payload) (string, error) {
+				MockSiteCounters["DeleteEntry"]++
+
+				return "", nil
+			}
+			siteService.GetRegistryServiceFn = func() (midas.RegistryService, error) {
+				MockSiteCounters["GetRegistryService"]++
+
+				return prepareMockRegistryService(site), nil
+			}
+
+			return siteService, nil
 		},
 	}, midas.Config{
 		Sites: map[string]midas.Site{
 			"test": {
-				Service:         "hugo",
-				CollectionTypes: []string{"post"},
-				SingleTypes:     []string{"homepage"},
+				Service: "hugo",
+				Registry: midas.RegistrySettings{
+					Type: "mock",
+				},
+				CollectionTypes: map[string]midas.ModelSettings{
+					"post": {"./archetypes/archetype.md", "./out"},
+				},
+				SingleTypes: map[string]midas.ModelSettings{
+					"homepage": {},
+				},
 			},
 			"otherService": {
 				Service: "other",
@@ -106,4 +152,65 @@ func SetUp(t *testing.T) *Server {
 	})
 
 	return s
+}
+
+func prepareMockRegistryService(site midas.Site) midas.RegistryService {
+	registryService := mock.NewRegistryService(site)
+
+	registryService.OpenStorageFn = func() error {
+		MockRegistryCounters["OpenStorage"]++
+
+		return nil
+	}
+	registryService.CloseStorageFn = func() {
+		MockRegistryCounters["CloseStorage"]++
+	}
+	registryService.CreateStorageFn = func() error {
+		MockRegistryCounters["CreateStorage"]++
+
+		return nil
+	}
+	registryService.FlushFn = func() error {
+		MockRegistryCounters["Flush"]++
+
+		return nil
+	}
+	registryService.CreateEntryFn = func(id, _ string) error {
+		MockRegistryCounters["CreateEntry"]++
+
+		if id == "error" {
+			return midas.Errorf(midas.ErrRegistry, "entry already exists")
+		}
+
+		return nil
+	}
+	registryService.ReadEntryFn = func(id string) (string, error) {
+		MockRegistryCounters["ReadEntry"]++
+
+		if id == "error" {
+			return "", midas.Errorf(midas.ErrRegistry, "entry doesn't exist")
+		}
+
+		return id + ".html", nil
+	}
+	registryService.UpdateEntryFn = func(id, _ string) error {
+		MockRegistryCounters["UpdateEntry"]++
+
+		if id == "error" {
+			return midas.Errorf(midas.ErrRegistry, "entry doesn't exist")
+		}
+
+		return nil
+	}
+	registryService.DeleteEntryFn = func(id string) error {
+		MockRegistryCounters["DeleteEntry"]++
+
+		if id == "error" {
+			return midas.Errorf(midas.ErrRegistry, "entry doesn't exist")
+		}
+
+		return nil
+	}
+
+	return registryService
 }

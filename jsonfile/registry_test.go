@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	site = midas.Site{RootDir: "./"}
-	r    = NewRegistryService(site)
+	site = midas.Site{RootDir: "./", Registry: midas.RegistrySettings{Type: "jsonfile", Location: "./test-registry.json"}}
+	r    = NewRegistryService(site).(*RegistryService)
 )
 
 func TestRegistryService_OpenStorage(t *testing.T) {
@@ -26,7 +26,7 @@ func TestRegistryService_OpenStorage(t *testing.T) {
 				t.Errorf("OpenStorage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if _, err := os.Stat(r.filePath); errors.Is(err, os.ErrNotExist) {
+			if _, err := os.Stat(r.path); errors.Is(err, os.ErrNotExist) {
 				t.Errorf("OpenStorage() registry file wasn't created")
 			}
 		})
@@ -179,7 +179,7 @@ func TestRegistryService_RemoveStorage(t *testing.T) {
 				t.Errorf("RemoveStorage() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if _, err := os.Stat(r.filePath); err == nil {
+			if _, err := os.Stat(r.path); err == nil {
 				t.Errorf("RemoveStorage() registry file wasn't removed")
 			}
 		})

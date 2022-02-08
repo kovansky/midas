@@ -50,10 +50,20 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hugoSite, err := s.SiteServices["hugo"](*cfg)
+	if err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	handler := &StrapiToHugoHandler{
-		HugoSite: s.SiteServices["hugo"](*cfg),
+		HugoSite: hugoSite,
 		Payload:  payload,
 	}
+	defer func() {
+		registry, _ := handler.HugoSite.GetRegistryService()
+		registry.CloseStorage()
+	}()
 
 	handler.Handle(w, r)
 }
@@ -64,9 +74,9 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	model := h.Payload.Metadata()["model"].(string)
 	var isSingle bool
 
-	if midas.Contains(cfg.SingleTypes, model) {
+	if _, ok := cfg.SingleTypes[model]; ok {
 		isSingle = true
-	} else if midas.Contains(cfg.CollectionTypes, model) {
+	} else if _, ok := cfg.CollectionTypes[model]; ok {
 		isSingle = false
 	} else {
 		Error(w, r, midas.Errorf(midas.ErrUnaccepted, "model %s is not accepted", model))
@@ -86,20 +96,27 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		if isSingle {
 			h.handleUpdateSingle(w, r)
 			return
+		} else {
+			h.handleUpdateCollection(w, r)
+			return
 		}
-		break
+	case strapi.Delete.String():
+		if isSingle {
+			break
+		} else {
+			h.handleDeleteCollection(w, r)
+			return
+		}
 	default:
 		Error(w, r, midas.Errorf(midas.ErrInvalid, "event %s is invalid", h.Payload.Event()))
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	// w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
-	err := h.HugoSite.BuildSite(true)
-
-	if err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -108,29 +125,49 @@ func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.R
 }
 
 func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *http.Request) {
-	_, err := h.HugoSite.CreateEntry(h.Payload)
-
-	if err != nil {
+	if _, err := h.HugoSite.CreateEntry(h.Payload); err != nil {
 		Error(w, r, err)
 		return
 	}
 
-	err = h.HugoSite.BuildSite(true)
-
-	if err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
-
-	// ToDo: add to registry
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.Request) {
-	err := h.HugoSite.BuildSite(false)
+	if err := h.HugoSite.BuildSite(false); err != nil {
+		Error(w, r, err)
+		return
+	}
 
-	if err != nil {
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateEntry(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := h.HugoSite.BuildSite(false); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h StrapiToHugoHandler) handleDeleteCollection(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.DeleteEntry(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}

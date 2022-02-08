@@ -8,6 +8,7 @@ import (
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/hugo"
+	"github.com/kovansky/midas/jsonfile"
 	"github.com/rollbar/rollbar-go"
 	"io/ioutil"
 	"log"
@@ -164,9 +165,15 @@ func (m *Main) Run(_ context.Context) (err error) {
 
 	m.HTTPServer.Config = m.Config
 
-	m.HTTPServer.SiteServices = map[string]func(site midas.Site) midas.SiteService{
-		"hugo": func(site midas.Site) midas.SiteService {
+	m.HTTPServer.SiteServices = map[string]func(site midas.Site) (midas.SiteService, error){
+		"hugo": func(site midas.Site) (midas.SiteService, error) {
 			return hugo.NewSiteService(site)
+		},
+	}
+
+	midas.RegistryServices = map[string]func(site midas.Site) midas.RegistryService{
+		"jsonfile": func(site midas.Site) midas.RegistryService {
+			return jsonfile.NewRegistryService(site)
 		},
 	}
 
