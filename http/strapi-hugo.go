@@ -100,6 +100,13 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			h.handleUpdateCollection(w, r)
 			return
 		}
+	case strapi.Delete.String():
+		if isSingle {
+			break
+		} else {
+			h.handleDeleteCollection(w, r)
+			return
+		}
 	default:
 		Error(w, r, midas.Errorf(midas.ErrInvalid, "event %s is invalid", h.Payload.Event()))
 		return
@@ -147,6 +154,20 @@ func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *ht
 	}
 
 	if err := h.HugoSite.BuildSite(false); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h StrapiToHugoHandler) handleDeleteCollection(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.DeleteEntry(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}

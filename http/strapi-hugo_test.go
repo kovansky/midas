@@ -213,4 +213,35 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			})
 		})
 	})
+
+	resetCounters()
+
+	t.Run("Delete", func(t *testing.T) {
+		t.Run("Collection", func(t *testing.T) {
+			jsonPayload := []byte(`{
+    "event": "entry.delete",
+    "createdAt": "2022-01-01T10:10:10.000Z",
+    "model": "post",
+    "entry": {
+      "id": 1,
+      "Title": "Test",
+      "Content": "Test",
+      "createdAt": "2022-01-01T10:10:10.000Z",
+      "updatedAt": "2022-01-01T10:10:10.000Z",
+      "publishedAt": null
+    }
+  }`)
+
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader(jsonPayload)))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testing_utils.AssertTable(t, map[string][]interface{}{
+				"Status code":      {resp.StatusCode, http.StatusNoContent},
+				"Site.UpdateEntry": {MockSiteCounters["DeleteEntry"], 1},
+				"Site.BuildSite":   {MockSiteCounters["BuildSite"], 1},
+			})
+		})
+	})
 }

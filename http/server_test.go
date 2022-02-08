@@ -118,6 +118,11 @@ func SetUp(t *testing.T) *Server {
 
 				return "", nil
 			}
+			siteService.DeleteEntryFn = func(_ midas.Payload) (string, error) {
+				MockSiteCounters["DeleteEntry"]++
+
+				return "", nil
+			}
 			siteService.GetRegistryServiceFn = func() (midas.RegistryService, error) {
 				MockSiteCounters["GetRegistryService"]++
 

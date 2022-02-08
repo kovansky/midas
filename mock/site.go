@@ -10,7 +10,7 @@ type SiteService struct {
 	BuildSiteFn          func(useCache bool) error
 	CreateEntryFn        func(payload midas.Payload) (string, error)
 	UpdateEntryFn        func(payload midas.Payload) (string, error)
-	RemoveEntryFn        func(payload midas.Payload) (string, error)
+	DeleteEntryFn        func(payload midas.Payload) (string, error)
 }
 
 func NewSiteService() *SiteService {
@@ -34,5 +34,5 @@ func (s *SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 }
 
 func (s *SiteService) DeleteEntry(payload midas.Payload) (string, error) {
-	return s.RemoveEntryFn(payload)
+	return s.DeleteEntryFn(payload)
 }
