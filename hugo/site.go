@@ -116,8 +116,9 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
-		Entry map[string]interface{}
-	}{payload.Entry()})
+		Metadata map[string]interface{}
+		Entry    map[string]interface{}
+	}{payload.Metadata(), payload.Entry()})
 	if err != nil {
 		return "", err
 	}
@@ -204,8 +205,9 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
-		Entry map[string]interface{}
-	}{payload.Entry()})
+		Metadata map[string]interface{}
+		Entry    map[string]interface{}
+	}{payload.Metadata(), payload.Entry()})
 	if err != nil {
 		return "", err
 	}

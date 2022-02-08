@@ -12,6 +12,7 @@ type Payload struct {
 	event     Event
 	CreatedAt time.Time
 	Model     string
+	metadata  map[string]interface{}
 	entry     map[string]interface{}
 }
 
@@ -23,6 +24,8 @@ func ParsePayload(json []byte) (midas.Payload, error) {
 		return nil, err
 	}
 
+	payload.createMetadataMap()
+
 	return payload, nil
 }
 
@@ -31,13 +34,22 @@ func (p Payload) Event() string {
 }
 
 func (p Payload) Metadata() map[string]interface{} {
+	return p.metadata
+}
+
+func (p *Payload) createMetadataMap() {
 	asMap := make(map[string]interface{})
 
 	asMap["event"] = p.event
 	asMap["createdAt"] = p.CreatedAt
 	asMap["model"] = p.Model
 
-	return asMap
+	asMap["published"] = false
+	if val, ok := p.entry["publishedAt"]; ok {
+		asMap["published"] = val != nil
+	}
+
+	p.metadata = asMap
 }
 
 func (p Payload) Entry() map[string]interface{} {
