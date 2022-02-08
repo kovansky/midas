@@ -250,7 +250,7 @@ func (s SiteService) EntryId(payload midas.Payload) string {
 }
 
 // getModel returns a model from any type (collection or single), and true if model is single or false otherwise.
-func (s SiteService) getModel(model string) (*midas.Model, bool) {
+func (s SiteService) getModel(model string) (*midas.ModelSettings, bool) {
 	if m, ok := s.Site.CollectionTypes[model]; ok {
 		return &m, false
 	} else if m, ok := s.Site.SingleTypes[model]; ok {

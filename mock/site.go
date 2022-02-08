@@ -5,24 +5,20 @@ import "github.com/kovansky/midas"
 var _ midas.SiteService = (*SiteService)(nil)
 
 type SiteService struct {
-	GetRegistryFn    func() (string, error)
-	CreateRegistryFn func() (string, error)
-	BuildSiteFn      func(useCache bool) error
-	CreateEntryFn    func(payload midas.Payload) (string, error)
-	UpdateEntryFn    func(payload midas.Payload) (string, error)
-	RemoveEntryFn    func(payload midas.Payload) (string, error)
+	GetRegistryServiceFn func() (midas.RegistryService, error)
+	CreateRegistryFn     func() (string, error)
+	BuildSiteFn          func(useCache bool) error
+	CreateEntryFn        func(payload midas.Payload) (string, error)
+	UpdateEntryFn        func(payload midas.Payload) (string, error)
+	RemoveEntryFn        func(payload midas.Payload) (string, error)
 }
 
 func NewSiteService() *SiteService {
 	return &SiteService{}
 }
 
-func (s *SiteService) GetRegistry() (string, error) {
-	return s.GetRegistryFn()
-}
-
-func (s *SiteService) CreateRegistry() (string, error) {
-	return s.CreateRegistryFn()
+func (s *SiteService) GetRegistryService() (midas.RegistryService, error) {
+	return s.GetRegistryServiceFn()
 }
 
 func (s *SiteService) BuildSite(useCache bool) error {
@@ -37,6 +33,6 @@ func (s *SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	return s.UpdateEntryFn(payload)
 }
 
-func (s *SiteService) RemoveEntry(payload midas.Payload) (string, error) {
+func (s *SiteService) DeleteEntry(payload midas.Payload) (string, error) {
 	return s.RemoveEntryFn(payload)
 }

@@ -1,20 +1,22 @@
 package midas
 
 type Site struct {
-	SiteName string `json:"siteName"`
-	RootDir  string `json:"rootDir"`
-	Service  string `json:"service"`
-	Registry struct {
-		Type     string `json:"type"`
-		Location string `json:"location"`
-	} `json:"registry"`
-	CollectionTypes map[string]Model `json:"collectionTypes"`
-	SingleTypes     map[string]Model `json:"singleTypes"`
+	SiteName        string                   `json:"siteName"`
+	RootDir         string                   `json:"rootDir"`
+	Service         string                   `json:"service"`
+	Registry        RegistrySettings         `json:"registry"`
+	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`
+	SingleTypes     map[string]ModelSettings `json:"singleTypes"`
 }
 
-type Model struct {
+type ModelSettings struct {
 	ArchetypePath string `json:"archetypePath,omitempty"`
 	OutputDir     string `json:"outputDir,omitempty"`
+}
+
+type RegistrySettings struct {
+	Type     string `json:"type"`
+	Location string `json:"location"`
 }
 
 type SiteService interface {

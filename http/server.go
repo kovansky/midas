@@ -7,7 +7,9 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/httplog"
 	"github.com/kovansky/midas"
+	"github.com/rs/zerolog"
 	"golang.org/x/crypto/acme/autocert"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -38,9 +40,11 @@ func NewServer(testing bool) *Server {
 
 	logger := httplog.NewLogger("midas", httplog.Options{Concise: true})
 
-	if !s.testing {
-		s.router.Use(httplog.RequestLogger(logger))
+	if s.testing {
+		logger = logger.Output(zerolog.ConsoleWriter{Out: io.Discard})
 	}
+
+	s.router.Use(httplog.RequestLogger(logger))
 
 	s.router.Use(middleware.Heartbeat("/ping"))
 
