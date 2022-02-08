@@ -221,9 +221,28 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	return outputPath, nil
 }
 
-func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
-	// TODO implement me
-	panic("implement me")
+func (s SiteService) DeleteEntry(payload midas.Payload) (string, error) {
+	// Get entry path
+	entryId := s.EntryId(payload)
+	entryPath, err := s.registry.ReadEntry(entryId)
+	if err != nil {
+		return "", err
+	}
+
+	// Remove entry
+	if err = os.Remove(entryPath); err != nil {
+		return "", nil
+	}
+
+	// Remove entry from registry
+	if err = s.registry.DeleteEntry(entryId); err != nil {
+		return entryPath, err
+	}
+	if err = s.registry.Flush(); err != nil {
+		return entryPath, err
+	}
+
+	return entryPath, nil
 }
 
 func (s SiteService) EntryId(payload midas.Payload) string {

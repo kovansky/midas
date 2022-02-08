@@ -22,5 +22,5 @@ type SiteService interface {
 	BuildSite(useCache bool) error
 	CreateEntry(payload Payload) (string, error)
 	UpdateEntry(payload Payload) (string, error)
-	RemoveEntry(payload Payload) (string, error)
+	DeleteEntry(payload Payload) (string, error)
 }
