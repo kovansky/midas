@@ -53,12 +53,17 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	hugoSite, err := s.SiteServices["hugo"](*cfg)
 	if err != nil {
 		Error(w, r, err)
+		return
 	}
 
 	handler := &StrapiToHugoHandler{
 		HugoSite: hugoSite,
 		Payload:  payload,
 	}
+	defer func() {
+		registry, _ := handler.HugoSite.GetRegistryService()
+		registry.CloseStorage()
+	}()
 
 	handler.Handle(w, r)
 }
@@ -93,14 +98,14 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			return
 		} else {
 			h.handleUpdateCollection(w, r)
+			return
 		}
-		break
 	default:
 		Error(w, r, midas.Errorf(midas.ErrInvalid, "event %s is invalid", h.Payload.Event()))
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	// w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
@@ -138,10 +143,12 @@ func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.R
 func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *http.Request) {
 	if _, err := h.HugoSite.UpdateEntry(h.Payload); err != nil {
 		Error(w, r, err)
+		return
 	}
 
 	if err := h.HugoSite.BuildSite(false); err != nil {
 		Error(w, r, err)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)

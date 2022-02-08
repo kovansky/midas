@@ -14,8 +14,7 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 
 	// Log internal errors
 	if code == midas.ErrInternal {
-		log := httplog.LogEntry(r.Context())
-		log.Error().Msgf("internal server error: %+v", err)
+
 		midas.ReportError(r.Context(), err, r)
 
 		message = "Internal server error" // We don't want the error to be displayed for the enduser
@@ -26,6 +25,9 @@ func Error(w http.ResponseWriter, r *http.Request, err error) {
 	w.Header().Set("Content-type", "application/json")
 	w.WriteHeader(ErrorStatusCode(code))
 	_, _ = w.Write(jsonError)
+
+	log := httplog.LogEntry(r.Context())
+	log.Error().Err(err).Msg("details of following errored request")
 }
 
 type ErrorResponse struct {

@@ -11,7 +11,7 @@ const (
 	ErrInvalid      = "invalid"
 	ErrUnaccepted   = "unaccepted"
 	ErrRegistry     = "registry"
-	ErrSiteConfig   = "siteconfig"
+	ErrSiteConfig   = "site config"
 )
 
 // Error represents an application-specific error. App errors can be
@@ -30,7 +30,7 @@ type Error struct {
 
 // Error implements the error interface.
 func (e *Error) Error() string {
-	return fmt.Sprintf("server error: code: %s message: %s", e.Code, e.Message)
+	return fmt.Sprintf("server error: code: %s, message: %s", e.Code, e.Message)
 }
 
 // ErrorCode unwraps an application error and returns its code.

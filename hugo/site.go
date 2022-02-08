@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 )
 
 var _ midas.SiteService = (*SiteService)(nil)
@@ -68,12 +68,12 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	modelName := payload.Metadata()["model"].(string)
 	model, _ := s.getModel(modelName)
 	archetypePath := model.ArchetypePath
-	if !path.IsAbs(archetypePath) {
-		archetypePath = path.Join(s.Site.RootDir, archetypePath)
+	if !filepath.IsAbs(archetypePath) {
+		archetypePath = filepath.Join(s.Site.RootDir, archetypePath)
 	}
 	outputDir := model.OutputDir
-	if !path.IsAbs(outputDir) {
-		outputDir = path.Join(s.Site.RootDir, outputDir)
+	if !filepath.IsAbs(outputDir) {
+		outputDir = filepath.Join(s.Site.RootDir, outputDir)
 	}
 
 	// Check if archetype exists
@@ -91,11 +91,11 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	// Format output filename
 	title := fmt.Sprintf("%v", payload.Entry()["Title"])
 	slug := midas.CreateSlug(title)
-	outputPath := path.Join(outputDir, slug+".html")
+	outputPath := filepath.Join(outputDir, slug+".html")
 
 	// Check if output filename is free
 	if fileExists(outputPath) {
-		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", path.Base(outputPath))
+		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", filepath.Base(outputPath))
 	}
 
 	// Read archetype file
@@ -140,8 +140,8 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	modelName := payload.Metadata()["model"].(string)
 	model, _ := s.getModel(modelName)
 	archetypePath := model.ArchetypePath
-	if !path.IsAbs(archetypePath) {
-		archetypePath = path.Join(s.Site.RootDir, archetypePath)
+	if !filepath.IsAbs(archetypePath) {
+		archetypePath = filepath.Join(s.Site.RootDir, archetypePath)
 	}
 
 	// Check if archetype exists
@@ -151,8 +151,17 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 
 	// Get old path
 	entryId := s.EntryId(payload)
-	oldPath, _ := s.registry.ReadEntry(entryId)
-	outputDir := path.Dir(oldPath)
+	oldPath, err := s.registry.ReadEntry(entryId)
+	outputDir := filepath.Dir(oldPath)
+	if err != nil {
+		// If entry not in the registry, create empty one, otherwise UpdateEntry later will complain
+		_ = s.registry.CreateEntry(entryId, "")
+		// Read output dir in normal way
+		outputDir = model.OutputDir
+		if !filepath.IsAbs(outputDir) {
+			outputDir = filepath.Join(s.Site.RootDir, outputDir)
+		}
+	}
 
 	// Check if output dir exists, attempt to create it if it doesn't
 	if !fileExists(outputDir) {
@@ -165,15 +174,15 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	// Format new output filename
 	title := fmt.Sprintf("%v", payload.Entry()["Title"])
 	slug := midas.CreateSlug(title)
-	outputPath := path.Join(outputDir, slug+".html")
+	outputPath := filepath.Join(outputDir, slug+".html")
 
 	// Check if output filename is free (excluding situation where name doesn't changed)
-	if fileExists(outputPath) && path.Base(outputPath) != path.Base(oldPath) {
-		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", path.Base(outputPath))
+	if fileExists(outputPath) && filepath.Base(outputPath) != filepath.Base(oldPath) {
+		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", filepath.Base(outputPath))
 	}
 
 	// Remove old entry if exists
-	if fileExists(oldPath) {
+	if oldPath != "" && fileExists(oldPath) {
 		_ = os.Remove(oldPath)
 	}
 
@@ -218,7 +227,7 @@ func (SiteService) RemoveEntry(payload midas.Payload) (string, error) {
 }
 
 func (s SiteService) EntryId(payload midas.Payload) string {
-	return fmt.Sprintf("%s-%d", payload.Metadata()["model"].(string), payload.Entry()["id"].(int))
+	return fmt.Sprintf("%v-%v", payload.Metadata()["model"], payload.Entry()["id"])
 }
 
 // getModel returns a model from any type (collection or single), and true if model is single or false otherwise.
