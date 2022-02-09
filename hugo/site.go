@@ -114,6 +114,10 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 		return "", err
 	}
 
+	// ToDo: extract template parsing
+	sanitized := payload.Entry()
+	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
+
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
 		Metadata map[string]interface{}
@@ -202,6 +206,9 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	sanitized := payload.Entry()
+	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
 
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
