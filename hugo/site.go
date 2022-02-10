@@ -114,15 +114,8 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 		return "", err
 	}
 
-	// ToDo: extract template parsing
-	sanitized := payload.Entry()
-	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
-
 	// Parse archetype and write it to output
-	err = tmpl.Execute(output, struct {
-		Metadata map[string]interface{}
-		Entry    map[string]interface{}
-	}{payload.Metadata(), payload.Entry()})
+	err = executeTemplate(tmpl, output, payload)
 	if err != nil {
 		return "", err
 	}
@@ -207,14 +200,8 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 		return "", err
 	}
 
-	sanitized := payload.Entry()
-	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
-
 	// Parse archetype and write it to output
-	err = tmpl.Execute(output, struct {
-		Metadata map[string]interface{}
-		Entry    map[string]interface{}
-	}{payload.Metadata(), payload.Entry()})
+	err = executeTemplate(tmpl, output, payload)
 	if err != nil {
 		return "", err
 	}
@@ -254,6 +241,7 @@ func (s SiteService) DeleteEntry(payload midas.Payload) (string, error) {
 	return entryPath, nil
 }
 
+// EntryId generates the entry to be used in registry.
 func (s SiteService) EntryId(payload midas.Payload) string {
 	return fmt.Sprintf("%v-%v", payload.Metadata()["model"], payload.Entry()["id"])
 }
@@ -273,4 +261,21 @@ func (s SiteService) getModel(model string) (*midas.ModelSettings, bool) {
 func fileExists(filename string) bool {
 	_, err := os.Stat(filename)
 	return !errors.Is(err, os.ErrNotExist)
+}
+
+// executeTemplate sanitizes the HTML and executes the template to the output file
+func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Payload) (err error) {
+	sanitized := payload.Entry()
+	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
+
+	// Parse archetype and write it to output
+	err = tmpl.Execute(output, struct {
+		Metadata map[string]interface{}
+		Entry    map[string]interface{}
+	}{payload.Metadata(), sanitized})
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
