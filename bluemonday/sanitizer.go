@@ -35,6 +35,8 @@ func (s *SanitizerService) injectDefaultPolicy() {
 	// For youtube, instagram etc...
 	p.AllowAttrs("url").OnElements("oembed") // ToDo: allow only some urls
 
+	// ToDo: for oembeds: read oembeds and resolve them
+
 	// Text display control
 	p.AllowStyles("font-family").
 		Matching(regexp.MustCompile("(?i)^[a-z0-9\\-_ ,'\\\"]+$")).
@@ -49,6 +51,9 @@ func (s *SanitizerService) injectDefaultPolicy() {
 			"lower-roman", "upper-roman", "lower-greek", "lower-latin", "upper-latin", "armenian",
 			"georgian", "lower-alpha", "upper-alpha", "none").
 		OnElements("ul", "ol")
+
+	p.AllowStyles("width").
+		Matching(bluemonday.NumberOrPercent).OnElements("figure")
 
 	p.AllowAttrs("class").Matching(bluemonday.SpaceSeparatedTokens).OnElements(classAllowedElements...)
 
