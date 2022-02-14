@@ -10,6 +10,7 @@ var (
 	Version string
 
 	RegistryServices map[string]func(site Site) RegistryService
+	Sanitizer        SanitizerService
 )
 
 // ReportError is used to notify external services of error.
