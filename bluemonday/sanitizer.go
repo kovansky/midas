@@ -20,6 +20,9 @@ func NewSanitizerService() *SanitizerService {
 	return sanitizerService
 }
 
+// injectDefaultPolicy creates a local default policy (extension of bluemonday's default UGCPolicy) and injects it into the SanitizerService.
+//
+// Warning: support for oembeds is currently dropped, but should be added in future (refer to MDS-18)
 func (s *SanitizerService) injectDefaultPolicy() {
 	textElements := []string{
 		"span", "p",
@@ -31,11 +34,6 @@ func (s *SanitizerService) injectDefaultPolicy() {
 		"figure")
 
 	p := bluemonday.UGCPolicy()
-
-	// For youtube, instagram etc...
-	p.AllowAttrs("url").OnElements("oembed") // ToDo: allow only some urls
-
-	// ToDo: for oembeds: read oembeds and resolve them
 
 	// Text display control
 	p.AllowStyles("font-family").
@@ -68,6 +66,7 @@ func (s *SanitizerService) injectDefaultPolicy() {
 	s.policy = p
 }
 
+// Sanitize function runs the HTML code through policies to remove unwanted/insecure elements.
 func (s SanitizerService) Sanitize(html string) string {
 	return s.policy.Sanitize(html)
 }
