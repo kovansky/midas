@@ -5,6 +5,7 @@ type Site struct {
 	RootDir         string                   `json:"rootDir"`
 	OutputSettings  OutputSettings           `json:"outputSettings"`
 	BuildDrafts     bool                     `json:"buildDrafts"`
+	DraftsUrl       string                   `json:"draftsUrl"`
 	Service         string                   `json:"service"`
 	Registry        RegistrySettings         `json:"registry"`
 	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`

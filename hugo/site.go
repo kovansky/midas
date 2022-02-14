@@ -44,20 +44,67 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 }
 
 func (s SiteService) BuildSite(useCache bool) error {
-	var arg string
+	var arg = s.constructBuildArgs(useCache, false)
 
-	if !useCache {
-		arg = "--ignoreCache"
-	} else {
-		arg = ""
-	}
-
-	cmd := exec.Command("hugo", arg)
+	cmd := exec.Command("hugo", arg...)
 	cmd.Dir = s.Site.RootDir
 
 	out, err := cmd.Output()
 	if err != nil {
 		return midas.Errorf(midas.ErrInternal, "hugo build errored: %s\ncommand output: %s", err, out)
+	}
+
+	if s.Site.BuildDrafts {
+		if err = s.BuildDrafts(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// constructBuildArgs generates hugo build arguments. If `isDraft` is true, the destination is changed
+// to draft destination and draft arguments are added.
+func (s SiteService) constructBuildArgs(useCache, isDraft bool) (arg []string) {
+	// In draft we never want to use cache to get the latest changes.
+	if !useCache || isDraft {
+		arg = append(arg, "--ignoreCache")
+	}
+
+	if !isDraft {
+		if s.Site.OutputSettings.Build != "" {
+			arg = append(arg, "-d", s.Site.OutputSettings.Build)
+		}
+	} else {
+		arg = append(arg, "-d")
+
+		if s.Site.OutputSettings.Draft != "" {
+			arg = append(arg, s.Site.OutputSettings.Draft)
+		} else {
+			arg = append(arg, "publicDrafts")
+		}
+
+		// -D is for build drafts, -E for build expired, -F for build future
+		arg = append(arg, "-D", "-E", "-F")
+
+		// Add baseUrl, if specified
+		if s.Site.DraftsUrl != "" {
+			arg = append(arg, "-b", s.Site.DraftsUrl)
+		}
+	}
+
+	return arg
+}
+
+func (s SiteService) BuildDrafts() error {
+	var arg = s.constructBuildArgs(false, true)
+
+	cmd := exec.Command("hugo", arg...)
+	cmd.Dir = s.Site.RootDir
+
+	out, err := cmd.Output()
+	if err != nil {
+		return midas.Errorf(midas.ErrInternal, "hugo draft build errored: %s\ncommand output: %s", err, out)
 	}
 
 	return nil
