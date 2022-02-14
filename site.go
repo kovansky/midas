@@ -3,10 +3,17 @@ package midas
 type Site struct {
 	SiteName        string                   `json:"siteName"`
 	RootDir         string                   `json:"rootDir"`
+	OutputSettings  OutputSettings           `json:"outputSettings"`
+	BuildDrafts     bool                     `json:"buildDrafts"`
 	Service         string                   `json:"service"`
 	Registry        RegistrySettings         `json:"registry"`
 	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`
 	SingleTypes     map[string]ModelSettings `json:"singleTypes"`
+}
+
+type OutputSettings struct {
+	Build string `json:"build,omitempty"`
+	Draft string `json:"draft,omitempty"`
 }
 
 type ModelSettings struct {
