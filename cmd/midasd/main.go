@@ -160,6 +160,7 @@ func (m *Main) Run(_ context.Context) (err error) {
 		rollbar.SetServerRoot("github.com/kovansky/midas")
 
 		midas.ReportError = rollbarError
+		midas.ReportPanic = rollbarPanic
 
 		log.Println("rollbar error tracking enabled")
 	}
@@ -237,7 +238,7 @@ func rollbarError(ctx context.Context, err error, args ...interface{}) {
 }
 
 // rollbarPanic reports panics to rollbar. Maybe will be used in future.
-func _(err interface{}) {
+func rollbarPanic(err interface{}) {
 	log.Printf("panic: %+v\n", err)
 	rollbar.LogPanic(err, true)
 }

@@ -266,7 +266,14 @@ func fileExists(filename string) bool {
 // executeTemplate sanitizes the HTML and executes the template to the output file
 func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Payload) (err error) {
 	sanitized := payload.Entry()
-	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
+
+	content := midas.Sanitizer.Sanitize(sanitized["Content"].(string))
+	withEmbeds, err := midas.Sanitizer.Embed(content)
+	if err != nil {
+		withEmbeds = content
+	}
+
+	sanitized["Content"] = template.HTML(withEmbeds)
 
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {

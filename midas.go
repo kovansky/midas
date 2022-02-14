@@ -19,6 +19,6 @@ var ReportError = func(ctx context.Context, err error, args ...interface{}) {
 }
 
 // ReportPanic is used to notify external services of panic. Maybe will be used in future.
-var _ = func(err interface{}) {
+var ReportPanic = func(err interface{}) {
 	log.Panic(err)
 }
