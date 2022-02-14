@@ -17,6 +17,7 @@ type StrapiToHugoHandler struct {
 
 func (s *Server) registerStrapiToHugoRoutes(r chi.Router) {
 	r.Post("/strapi/hugo", s.handleStrapiToHugo)
+	r.Post("/strapi/hugo/rebuild", s.HandleHugoRebuild)
 }
 
 func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +67,49 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	handler.Handle(w, r)
+}
+
+func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
+	cfg := midas.SiteConfigFromContext(r.Context())
+
+	if cfg == nil {
+		Error(w, r, midas.Errorf(midas.ErrInternal, "site config not passed to the handler"))
+		return
+	}
+
+	if cfg.Service != "hugo" {
+		Error(w, r, midas.Errorf(midas.ErrInvalid, "service mismatch: called %s while requested site is on %s", "hugo", cfg.Service))
+		return
+	}
+
+	hugoSite, err := s.SiteServices["hugo"](*cfg)
+	if err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	useCache := true
+	if r.URL.Query().Has("cache") {
+		switch r.URL.Query().Get("cache") {
+		case "0", "false", "disable":
+			useCache = false
+		}
+	}
+
+	if err = hugoSite.BuildSite(useCache); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	response := map[string]string{
+		"status": "ok",
+	}
+
+	jsoned, _ := json.Marshal(response)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(jsoned)
 }
 
 func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
