@@ -244,4 +244,89 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			})
 		})
 	})
+
+	resetCounters()
+}
+
+func TestServer_HandleHugoRebuild(t *testing.T) {
+	endpoint := "/strapi/hugo/rebuild"
+
+	s := SetUp(t)
+	defer MustCloseServer(t, s)
+
+	t.Run("Unauthenticated", func(t *testing.T) {
+		t.Run("NoKey", func(t *testing.T) {
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "", "POST", endpoint, bytes.NewReader([]byte(""))))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testing_utils.AssertEquals(t, resp.StatusCode, http.StatusUnauthorized, "Status code")
+
+			jsonBody, _ := io.ReadAll(resp.Body)
+			var respError midashttp.ErrorResponse
+			err = json.Unmarshal(jsonBody, &respError)
+
+			testing_utils.AssertTable(t, map[string][]interface{}{
+				"Response body json unmarshal error": {err, nil},
+				"Error response":                     {respError, midashttp.ErrorResponse{Error: "No API key."}},
+			})
+		})
+		t.Run("IncorrectKey", func(t *testing.T) {
+			resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "xyz", "POST", endpoint, bytes.NewReader([]byte(""))))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testing_utils.AssertEquals(t, resp.StatusCode, http.StatusUnauthorized, "Status code")
+
+			jsonBody, _ := io.ReadAll(resp.Body)
+			var respError midashttp.ErrorResponse
+			err = json.Unmarshal(jsonBody, &respError)
+
+			testing_utils.AssertTable(t, map[string][]interface{}{
+				"Response body json unmarshal error": {err, nil},
+				"Error response":                     {respError, midashttp.ErrorResponse{Error: "Invalid API key."}},
+			})
+		})
+	})
+
+	t.Run("ServiceMismatch", func(t *testing.T) {
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "otherService", "POST", endpoint, bytes.NewReader([]byte(""))))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testing_utils.AssertEquals(t, resp.StatusCode, http.StatusBadRequest, "Status code")
+
+		jsonBody, _ := io.ReadAll(resp.Body)
+		var respError midashttp.ErrorResponse
+		err = json.Unmarshal(jsonBody, &respError)
+
+		testing_utils.AssertTable(t, map[string][]interface{}{
+			"Response body json unmarshal error": {err, nil},
+			"Error response":                     {strings.HasPrefix(respError.Error, "service mismatch:"), true},
+		})
+	})
+
+	t.Run("Rebuild", func(t *testing.T) {
+		resp, err := http.DefaultClient.Do(s.MustNewRequest(t, context.Background(), "test", "POST", endpoint, bytes.NewReader([]byte(``))))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		jsonBody, _ := io.ReadAll(resp.Body)
+		var respBody map[string]string
+		err = json.Unmarshal(jsonBody, &respBody)
+
+		testing_utils.AssertTable(t, map[string][]interface{}{
+			"Response body json unmarshal error": {err, nil},
+			"Status code":                        {resp.StatusCode, http.StatusOK},
+			"Response length":                    {len(respBody), 1},
+			"Response content":                   {respBody["status"], "ok"},
+			"Site.BuildSite":                     {MockSiteCounters["BuildSite"], 1},
+		})
+	})
+
+	resetCounters()
 }
