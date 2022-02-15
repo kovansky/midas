@@ -89,3 +89,5 @@ fabric.properties
 # vendor/
 
 config.json
+
+dist/

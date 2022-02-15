@@ -21,9 +21,7 @@ import (
 )
 
 var (
-	commit      string
-	version     string
-	environment string
+	commit, version, date, environment string
 )
 
 // main is the entry point of the application binary.
@@ -153,6 +151,8 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 // Run executes the program. The configuration should already be set up
 // before calling this function.
 func (m *Main) Run(_ context.Context) (err error) {
+	log.Printf("Starting midas v%s (%s) built on %s\n\n", midas.Version, midas.Commit, date)
+
 	if m.Config.RollbarToken != "" {
 		rollbar.SetToken(m.Config.RollbarToken)
 		rollbar.SetEnvironment(environment)
