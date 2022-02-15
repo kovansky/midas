@@ -1,6 +1,9 @@
 # Midas
 
 [![Test](https://github.com/kovansky/midas/actions/workflows/test.yml/badge.svg)](https://github.com/kovansky/midas/actions/workflows/test.yml)
+[![Build](https://github.com/kovansky/midas/actions/workflows/build.yml/badge.svg)](https://github.com/kovansky/midas/actions/workflows/build.yml)
+![License](https://img.shields.io/github/license/kovansky/midas)
+![GitHub release (latest by SemVer)](https://img.shields.io/github/downloads/kovansky/midas/latest/total?label=download&sort=semver)
 
 ## What am I?
 
