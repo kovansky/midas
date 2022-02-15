@@ -125,7 +125,7 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 	// Only config path flag
 	fs := flag.NewFlagSet("midasd", flag.ContinueOnError)
 	fs.StringVar(&m.ConfigPath, "config", defaultConfigPath, "config path")
-	fs.StringVar(&environment, "env", "development", "app environment (development, production)")
+	fs.StringVar(&environment, "env", "production", "app environment (development, production)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -151,7 +151,8 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 // Run executes the program. The configuration should already be set up
 // before calling this function.
 func (m *Main) Run(_ context.Context) (err error) {
-	log.Printf("Starting midas v%s (%s) built on %s\n\n", midas.Version, midas.Commit, date)
+	log.Printf("Starting midas v%s (%s) built on %s\n", midas.Version, midas.Commit, date)
+	log.Printf("Environment: %s\n", environment)
 
 	if m.Config.RollbarToken != "" {
 		rollbar.SetToken(m.Config.RollbarToken)
