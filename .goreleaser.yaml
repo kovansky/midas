@@ -1,0 +1,49 @@
+project_name: midas
+
+env:
+  - GO111MODULE=on
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: "midasd"
+    main: ./cmd/midasd
+    binary: midasd
+    goos:
+      - linux
+      - windows
+      - darwin
+
+archives:
+  - id: midasd
+    builds:
+      - midasd
+    wrap_in_directory: "true"
+    format_overrides:
+      - goos: windows
+        format: zip
+    replacements:
+      darwin: mac
+      386: i386
+      amd64: x86_64
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+
+release:
+  github:
+    owner: kovansky
+    name: midas
+  ids:
+    - midasd
+  header: |
+    ## Midas v{{ .Version }} ({{ .Date }})
+  name_template: "{{ .ProjectName }}-v{{ .Version }}"
