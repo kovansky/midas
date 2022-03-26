@@ -32,7 +32,7 @@ func ParsePayload(json []byte) (midas.Payload, error) {
 
 	payload.createMetadataMap()
 
-	return payload, nil
+	return &payload, nil
 }
 
 func (p Payload) Event() string {
