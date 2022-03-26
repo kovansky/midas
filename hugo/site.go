@@ -294,6 +294,53 @@ func (s SiteService) DeleteEntry(payload midas.Payload) (string, error) {
 	return entryPath, nil
 }
 
+func (s SiteService) UpdateSingle(payload midas.Payload) (string, error) {
+	// Set output directory
+	modelName := payload.Metadata()["model"].(string)
+	model, _ := s.getModel(modelName)
+	outputDir := model.OutputDir
+	if !filepath.IsAbs(outputDir) {
+		outputDir = filepath.Join(s.Site.RootDir, outputDir)
+	}
+
+	// Check if output dir exists, attempt to create it if it doesn't
+	if !fileExists(outputDir) {
+		err := os.Mkdir(outputDir, 0775)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Format output filename
+	outputPath := filepath.Join(outputDir, fmt.Sprintf("%s.json", modelName))
+
+	// Sanitize the entry
+	asJson, err := payload.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+
+	asJson = []byte(midas.Sanitizer.Sanitize(string(asJson)))
+
+	// Open output file
+	output, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0775)
+	defer func(outout *os.File) {
+		_ = output.Close()
+	}(output)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Write the output
+	_, err = output.Write(asJson)
+	if err != nil {
+		return "", err
+	}
+
+	return outputPath, nil
+}
+
 // EntryId generates the entry to be used in registry.
 func (s SiteService) EntryId(payload midas.Payload) string {
 	return fmt.Sprintf("%v-%v", payload.Metadata()["model"], payload.Entry()["id"])
@@ -332,3 +379,9 @@ func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Pay
 
 	return nil
 }
+
+// func sanitizeHtmlInJson[T ](jsonEntry map[string]interface{}) map[string]interface{} {
+//     for eKey, eValue := range jsonEntry {
+//         // Check if entry is a map
+//     }
+// }

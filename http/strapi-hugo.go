@@ -11,13 +11,14 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/hugo"
 	"github.com/kovansky/midas/strapi"
 	"io"
 	"net/http"
 )
 
 type StrapiToHugoHandler struct {
-	HugoSite midas.SiteService
+	HugoSite hugo.SiteService
 	Payload  midas.Payload
 }
 
@@ -64,7 +65,7 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := &StrapiToHugoHandler{
-		HugoSite: hugoSite,
+		HugoSite: hugoSite.(hugo.SiteService),
 		Payload:  payload,
 	}
 	defer func() {
@@ -166,12 +167,17 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *http.Request) {
@@ -189,12 +195,17 @@ func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *ht
 }
 
 func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(false); err != nil {
 		Error(w, r, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *http.Request) {
