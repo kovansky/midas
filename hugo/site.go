@@ -315,12 +315,15 @@ func (s SiteService) UpdateSingle(payload midas.Payload) (string, error) {
 	outputPath := filepath.Join(outputDir, fmt.Sprintf("%s.json", modelName))
 
 	// Sanitize the entry
+	entry := payload.Entry()
+	entry = sanitizeHtmlInMap(entry)
+
+	payload.SetEntry(entry)
+
 	asJson, err := payload.MarshalJSON()
 	if err != nil {
 		return "", err
 	}
-
-	asJson = []byte(midas.Sanitizer.Sanitize(string(asJson)))
 
 	// Open output file
 	output, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0775)
@@ -380,8 +383,53 @@ func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Pay
 	return nil
 }
 
-// func sanitizeHtmlInJson[T ](jsonEntry map[string]interface{}) map[string]interface{} {
-//     for eKey, eValue := range jsonEntry {
-//         // Check if entry is a map
-//     }
-// }
+// sanitizeHtmlInMap iterates (recursively) through given map and passes each value through HTML sanitizer.
+func sanitizeHtmlInMap(entry map[string]interface{}) map[string]interface{} {
+	output := make(map[string]interface{})
+
+	for key, value := range entry {
+		// Check value type
+		switch value.(type) {
+		case map[string]interface{}:
+			output[key] = sanitizeHtmlInMap(value.(map[string]interface{}))
+			break
+		case []interface{}:
+			output[key] = sanitizeHtmlInSlice(value.([]interface{}))
+			break
+		default:
+			if stringed, ok := value.(string); ok {
+				output[key] = midas.Sanitizer.Sanitize(stringed)
+			} else {
+				output[key] = value
+			}
+
+		}
+	}
+
+	return output
+}
+
+// sanitizeHtmlInSlice iterates (recursively) through given slice and passes each value through HTML sanitizer.
+func sanitizeHtmlInSlice(entry []interface{}) []interface{} {
+	output := make([]interface{}, len(entry))
+
+	for key, value := range entry {
+		// Check value type
+		switch value.(type) {
+		case map[string]interface{}:
+			output[key] = sanitizeHtmlInMap(value.(map[string]interface{}))
+			break
+		case []interface{}:
+			output[key] = sanitizeHtmlInSlice(value.([]interface{}))
+			break
+		default:
+			if stringed, ok := value.(string); ok {
+				output[key] = midas.Sanitizer.Sanitize(stringed)
+			} else {
+				output[key] = value
+			}
+		}
+	}
+
+	return output
+}

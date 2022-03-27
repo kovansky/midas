@@ -62,6 +62,10 @@ func (p Payload) Entry() map[string]interface{} {
 	return p.entry
 }
 
+func (p Payload) SetEntry(entry map[string]interface{}) {
+	p.entry = entry
+}
+
 func (p Payload) Raw() interface{} {
 	return p
 }
