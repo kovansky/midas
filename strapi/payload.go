@@ -32,7 +32,7 @@ func ParsePayload(json []byte) (midas.Payload, error) {
 
 	payload.createMetadataMap()
 
-	return payload, nil
+	return &payload, nil
 }
 
 func (p Payload) Event() string {
@@ -60,6 +60,10 @@ func (p *Payload) createMetadataMap() {
 
 func (p Payload) Entry() map[string]interface{} {
 	return p.entry
+}
+
+func (p Payload) SetEntry(entry map[string]interface{}) {
+	p.entry = entry
 }
 
 func (p Payload) Raw() interface{} {

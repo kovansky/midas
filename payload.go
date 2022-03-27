@@ -6,9 +6,14 @@
 
 package midas
 
+import "encoding/json"
+
 type Payload interface {
+	json.Unmarshaler
+	json.Marshaler
 	Event() string
 	Metadata() map[string]interface{}
 	Entry() map[string]interface{}
+	SetEntry(map[string]interface{})
 	Raw() interface{}
 }

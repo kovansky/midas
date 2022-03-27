@@ -166,6 +166,11 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
@@ -189,6 +194,11 @@ func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *ht
 }
 
 func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(false); err != nil {
 		Error(w, r, err)
 		return

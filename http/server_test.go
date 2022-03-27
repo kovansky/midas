@@ -23,6 +23,7 @@ var (
 		"CreateEntry":        0,
 		"UpdateEntry":        0,
 		"DeleteEntry":        0,
+		"UpdateSingle":       0,
 	}
 	MockRegistryCounters = map[string]int{
 		"OpenStorage":   0,
@@ -133,6 +134,11 @@ func SetUp(t *testing.T) *Server {
 				MockSiteCounters["GetRegistryService"]++
 
 				return prepareMockRegistryService(site), nil
+			}
+			siteService.UpdateSingleFn = func(_ midas.Payload) (string, error) {
+				MockSiteCounters["UpdateSingle"]++
+
+				return "", nil
 			}
 
 			return siteService, nil
