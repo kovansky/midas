@@ -7,15 +7,20 @@
 package midas
 
 type Site struct {
-	SiteName        string                   `json:"siteName"`
-	RootDir         string                   `json:"rootDir"`
-	OutputSettings  OutputSettings           `json:"outputSettings"`
-	BuildDrafts     bool                     `json:"buildDrafts"`
-	DraftsUrl       string                   `json:"draftsUrl"`
-	Service         string                   `json:"service"`
+	SiteName string `json:"siteName"`
+	Service  string `json:"service"`
+
+	RootDir        string         `json:"rootDir"`
+	OutputSettings OutputSettings `json:"outputSettings"`
+
+	BuildDrafts bool   `json:"buildDrafts"`
+	DraftsUrl   string `json:"draftsUrl"`
+
 	Registry        RegistrySettings         `json:"registry"`
 	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`
 	SingleTypes     map[string]ModelSettings `json:"singleTypes"`
+
+	Deployment DeploymentSettings `json:"deployment"`
 }
 
 type OutputSettings struct {
@@ -31,6 +36,13 @@ type ModelSettings struct {
 type RegistrySettings struct {
 	Type     string `json:"type"`
 	Location string `json:"location"`
+}
+
+type DeploymentSettings struct {
+	Target     string            `json:"target"` // Can be: AWS
+	Region     string            `json:"region"`
+	Key        string            `json:"key"`
+	Additional map[string]string `json:"additional"` // Settings specific to the target
 }
 
 type SiteService interface {
