@@ -11,14 +11,13 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/kovansky/midas"
-	"github.com/kovansky/midas/hugo"
 	"github.com/kovansky/midas/strapi"
 	"io"
 	"net/http"
 )
 
 type StrapiToHugoHandler struct {
-	HugoSite hugo.SiteService
+	HugoSite midas.SiteService
 	Payload  midas.Payload
 }
 
@@ -65,7 +64,7 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	handler := &StrapiToHugoHandler{
-		HugoSite: hugoSite.(hugo.SiteService),
+		HugoSite: hugoSite,
 		Payload:  payload,
 	}
 	defer func() {
@@ -177,7 +176,7 @@ func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +204,7 @@ func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *http.Request) {

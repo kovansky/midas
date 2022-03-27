@@ -39,4 +39,5 @@ type SiteService interface {
 	CreateEntry(payload Payload) (string, error)
 	UpdateEntry(payload Payload) (string, error)
 	DeleteEntry(payload Payload) (string, error)
+	UpdateSingle(payload Payload) (string, error)
 }

@@ -126,8 +126,9 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			}
 
 			testing_utils.AssertTable(t, map[string][]interface{}{
-				"Status code":    {resp.StatusCode, http.StatusNoContent},
-				"Site.BuildSite": {MockSiteCounters["BuildSite"], 1},
+				"Status code":       {resp.StatusCode, http.StatusNoContent},
+				"Site.UpdateSingle": {MockSiteCounters["UpdateSingle"], 1},
+				"Site.BuildSite":    {MockSiteCounters["BuildSite"], 1},
 			})
 		})
 
@@ -185,8 +186,9 @@ func TestStrapiToHugoHandler_Handle(t *testing.T) {
 			}
 
 			testing_utils.AssertTable(t, map[string][]interface{}{
-				"Status code":    {resp.StatusCode, http.StatusNoContent},
-				"Site.BuildSite": {MockSiteCounters["BuildSite"], 1},
+				"Status code":       {resp.StatusCode, http.StatusNoContent},
+				"Site.UpdateSingle": {MockSiteCounters["UpdateSingle"], 1},
+				"Site.BuildSite":    {MockSiteCounters["BuildSite"], 1},
 			})
 		})
 
