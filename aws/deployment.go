@@ -33,6 +33,14 @@ func (f fileWalk) Walk(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+type DeploymentSettigs struct {
+	BucketName string `json:"bucketName"`
+	Region     string `json:"region"`
+	AccessKey  string `json:"accessKey"`
+	SecretKey  string `json:"secretKey"`
+	S3Prefix   string `json:"s3Prefix"`
+}
+
 type Deployment struct {
 	site               midas.Site
 	deploymentSettings midas.DeploymentSettings
@@ -62,11 +70,9 @@ func (d *Deployment) Deploy() error {
 		return err
 	}
 
-	accessKey, secretKey := d.retrieveKeys()
-
 	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
-		config.WithRegion(d.deploymentSettings.Region))
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(d.deploymentSettings.AWS.AccessKey, d.deploymentSettings.AWS.SecretKey, "")),
+		config.WithRegion(d.deploymentSettings.AWS.Region))
 	if err != nil {
 		return err
 	}
@@ -103,11 +109,14 @@ func (d *Deployment) Deploy() error {
 	return nil
 }
 
+// ToDo: Removing old files from S3.
+// ToDo: Cloudfront invalidation
+
 // uploadFile uploads a file to the S3 bucket.
 func (d *Deployment) uploadFile(uploader *manager.Uploader, file *os.File, rel string) error {
 	fileKey := rel
-	if d.deploymentSettings.Additional["prefix"] != "" {
-		fileKey = fmt.Sprintf("%s/%s", d.deploymentSettings.Additional["prefix"], rel)
+	if d.deploymentSettings.AWS.S3Prefix != "" {
+		fileKey = fmt.Sprintf("%s/%s", d.deploymentSettings.AWS.S3Prefix, rel)
 	}
 
 	fileKey = strings.ReplaceAll(fileKey, "\\", "/")
@@ -115,7 +124,7 @@ func (d *Deployment) uploadFile(uploader *manager.Uploader, file *os.File, rel s
 	contentType := getFileContentType(file.Name())
 
 	_, err := uploader.Upload(context.Background(), &s3.PutObjectInput{
-		Bucket:      aws.String(d.deploymentSettings.Additional["bucket"]),
+		Bucket:      aws.String(d.deploymentSettings.AWS.BucketName),
 		Key:         aws.String(fileKey),
 		Body:        file,
 		ContentType: aws.String(contentType),
@@ -140,12 +149,6 @@ func (d *Deployment) retrieveFiles() (fileWalk, error) {
 	}()
 
 	return walker, nil
-}
-
-// retrieveKeys splits the key provided in config to access key and secret key in given order.
-func (d Deployment) retrieveKeys() (string, string) {
-	sliced := strings.Split(d.deploymentSettings.Key, "|")
-	return sliced[0], sliced[1]
 }
 
 // getFileContentType returns the content type of the file based on the extension.

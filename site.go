@@ -39,14 +39,6 @@ type RegistrySettings struct {
 	Location string `json:"location"`
 }
 
-type DeploymentSettings struct {
-	Enabled    bool              `json:"enabled,default=false"`
-	Target     string            `json:"target"` // Can be: AWS
-	Region     string            `json:"region"`
-	Key        string            `json:"key"`
-	Additional map[string]string `json:"additional"` // Settings specific to the target
-}
-
 type SiteService interface {
 	GetRegistryService() (RegistryService, error)
 	BuildSite(useCache bool) error
