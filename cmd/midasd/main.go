@@ -12,6 +12,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/aws"
 	"github.com/kovansky/midas/bluemonday"
 	"github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/hugo"
@@ -182,6 +183,12 @@ func (m *Main) Run(_ context.Context) (err error) {
 	midas.RegistryServices = map[string]func(site midas.Site) midas.RegistryService{
 		"jsonfile": func(site midas.Site) midas.RegistryService {
 			return jsonfile.NewRegistryService(site)
+		},
+	}
+
+	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) midas.Deployment{
+		"aws": func(site midas.Site, settings midas.DeploymentSettings) midas.Deployment {
+			return aws.New(site, settings)
 		},
 	}
 

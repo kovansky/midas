@@ -13,14 +13,15 @@ type Site struct {
 	RootDir        string         `json:"rootDir"`
 	OutputSettings OutputSettings `json:"outputSettings"`
 
-	BuildDrafts bool   `json:"buildDrafts"`
+	BuildDrafts bool   `json:"buildDrafts,default=false"`
 	DraftsUrl   string `json:"draftsUrl"`
 
 	Registry        RegistrySettings         `json:"registry"`
 	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`
 	SingleTypes     map[string]ModelSettings `json:"singleTypes"`
 
-	Deployment DeploymentSettings `json:"deployment"`
+	Deployment       DeploymentSettings `json:"deployment"`
+	DraftsDeployment DeploymentSettings `json:"draftsDeployment"`
 }
 
 type OutputSettings struct {
@@ -39,6 +40,7 @@ type RegistrySettings struct {
 }
 
 type DeploymentSettings struct {
+	Enabled    bool              `json:"enabled,default=false"`
 	Target     string            `json:"target"` // Can be: AWS
 	Region     string            `json:"region"`
 	Key        string            `json:"key"`

@@ -15,8 +15,9 @@ var (
 	Commit  string
 	Version string
 
-	RegistryServices map[string]func(site Site) RegistryService
-	Sanitizer        SanitizerService
+	RegistryServices  map[string]func(site Site) RegistryService
+	DeploymentTargets map[string]func(site Site, settings DeploymentSettings) Deployment
+	Sanitizer         SanitizerService
 )
 
 // ReportError is used to notify external services of error.
