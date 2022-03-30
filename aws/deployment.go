@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/kovansky/midas"
 	"os"
 	"path/filepath"
@@ -33,18 +34,11 @@ func (f fileWalk) Walk(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
-type DeploymentSettigs struct {
-	BucketName string `json:"bucketName"`
-	Region     string `json:"region"`
-	AccessKey  string `json:"accessKey"`
-	SecretKey  string `json:"secretKey"`
-	S3Prefix   string `json:"s3Prefix"`
-}
-
 type Deployment struct {
 	site               midas.Site
 	deploymentSettings midas.DeploymentSettings
 	publicPath         string
+	s3Client           *s3.Client
 }
 
 func New(site midas.Site, deploymentSettings midas.DeploymentSettings) midas.Deployment {
@@ -77,8 +71,17 @@ func (d *Deployment) Deploy() error {
 		return err
 	}
 
+	d.s3Client = s3.NewFromConfig(cfg)
+
+	var currentObjects []string
+	if currentObjects, err = d.listObjects(); err != nil {
+		return err
+	}
+
+	_ = d.deleteObjects(currentObjects)
+
 	// Upload each file to the S3 bucket.
-	uploader := manager.NewUploader(s3.NewFromConfig(cfg))
+	uploader := manager.NewUploader(d.s3Client)
 	for path := range walker {
 		err = func() error {
 			rel, err := filepath.Rel(d.publicPath, path)
@@ -109,7 +112,6 @@ func (d *Deployment) Deploy() error {
 	return nil
 }
 
-// ToDo: Removing old files from S3.
 // ToDo: Cloudfront invalidation
 
 // uploadFile uploads a file to the S3 bucket.
@@ -129,6 +131,47 @@ func (d *Deployment) uploadFile(uploader *manager.Uploader, file *os.File, rel s
 		Body:        file,
 		ContentType: aws.String(contentType),
 	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// listObjects retrieves a list of objects in the S3 bucket.
+func (d *Deployment) listObjects() ([]string, error) {
+	var objects []string
+
+	output, err := d.s3Client.ListObjectsV2(context.Background(), &s3.ListObjectsV2Input{
+		Bucket: aws.String(d.deploymentSettings.AWS.BucketName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, obj := range output.Contents {
+		objects = append(objects, aws.ToString(obj.Key))
+	}
+
+	return objects, nil
+}
+
+// deleteObjects deletes objects from the S3 bucket.
+func (d *Deployment) deleteObjects(objects []string) error {
+	var identifiers []types.ObjectIdentifier
+	for key := range objects {
+		identifiers = append(identifiers, types.ObjectIdentifier{
+			Key: aws.String(objects[key]),
+		})
+	}
+
+	_, err := d.s3Client.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
+		Bucket: aws.String(d.deploymentSettings.AWS.BucketName),
+		Delete: &types.Delete{
+			Objects: identifiers,
+		},
+	})
+
 	if err != nil {
 		return err
 	}
