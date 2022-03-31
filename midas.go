@@ -16,7 +16,7 @@ var (
 	Version string
 
 	RegistryServices  map[string]func(site Site) RegistryService
-	DeploymentTargets map[string]func(site Site, settings DeploymentSettings) Deployment
+	DeploymentTargets map[string]func(site Site, settings DeploymentSettings) (Deployment, error)
 	Sanitizer         SanitizerService
 )
 

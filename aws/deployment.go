@@ -13,12 +13,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/cloudfront"
+	cftypes "github.com/aws/aws-sdk-go-v2/service/cloudfront/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/kovansky/midas"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type fileWalk chan string
@@ -38,10 +42,13 @@ type Deployment struct {
 	site               midas.Site
 	deploymentSettings midas.DeploymentSettings
 	publicPath         string
-	s3Client           *s3.Client
+
+	awsConfig aws.Config
+	s3Client  *s3.Client
+	cfClient  *cloudfront.Client
 }
 
-func New(site midas.Site, deploymentSettings midas.DeploymentSettings) midas.Deployment {
+func New(site midas.Site, deploymentSettings midas.DeploymentSettings) (midas.Deployment, error) {
 	// Get build destination directory
 	var publicPath string
 	if site.OutputSettings.Build != "" {
@@ -54,7 +61,17 @@ func New(site midas.Site, deploymentSettings midas.DeploymentSettings) midas.Dep
 		publicPath = filepath.Join(site.RootDir, "public")
 	}
 
-	return &Deployment{site: site, deploymentSettings: deploymentSettings, publicPath: publicPath}
+	cfg, err := config.LoadDefaultConfig(context.Background(),
+		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(deploymentSettings.AWS.AccessKey, deploymentSettings.AWS.SecretKey, "")),
+		config.WithRegion(deploymentSettings.AWS.Region))
+	if err != nil {
+		return nil, err
+	}
+
+	s3Client := s3.NewFromConfig(cfg)
+	cfClient := cloudfront.NewFromConfig(cfg)
+
+	return &Deployment{site: site, deploymentSettings: deploymentSettings, publicPath: publicPath, s3Client: s3Client, cfClient: cfClient}, nil
 }
 
 // Deploy uploads built site to the AWS S3 bucket.
@@ -63,15 +80,6 @@ func (d *Deployment) Deploy() error {
 	if err != nil {
 		return err
 	}
-
-	cfg, err := config.LoadDefaultConfig(context.Background(),
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(d.deploymentSettings.AWS.AccessKey, d.deploymentSettings.AWS.SecretKey, "")),
-		config.WithRegion(d.deploymentSettings.AWS.Region))
-	if err != nil {
-		return err
-	}
-
-	d.s3Client = s3.NewFromConfig(cfg)
 
 	var currentObjects []string
 	if currentObjects, err = d.listObjects(); err != nil {
@@ -109,10 +117,13 @@ func (d *Deployment) Deploy() error {
 		}
 	}
 
+	err = d.invalidateCloudfront()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
-
-// ToDo: Cloudfront invalidation
 
 // uploadFile uploads a file to the S3 bucket.
 func (d *Deployment) uploadFile(uploader *manager.Uploader, file *os.File, rel string) error {
@@ -158,22 +169,46 @@ func (d *Deployment) listObjects() ([]string, error) {
 
 // deleteObjects deletes objects from the S3 bucket.
 func (d *Deployment) deleteObjects(objects []string) error {
-	var identifiers []types.ObjectIdentifier
+	var identifiers []s3types.ObjectIdentifier
 	for key := range objects {
-		identifiers = append(identifiers, types.ObjectIdentifier{
+		identifiers = append(identifiers, s3types.ObjectIdentifier{
 			Key: aws.String(objects[key]),
 		})
 	}
 
 	_, err := d.s3Client.DeleteObjects(context.Background(), &s3.DeleteObjectsInput{
 		Bucket: aws.String(d.deploymentSettings.AWS.BucketName),
-		Delete: &types.Delete{
+		Delete: &s3types.Delete{
 			Objects: identifiers,
 		},
 	})
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// invalidateCloudfront invalidates the HTML files in the Cloudfront distribution.
+func (d *Deployment) invalidateCloudfront() error {
+	paths := []string{"/*.html"}
+
+	if d.deploymentSettings.AWS.CloudfrontDistribution != "" {
+		_, err := d.cfClient.CreateInvalidation(context.Background(), &cloudfront.CreateInvalidationInput{
+			DistributionId: aws.String(d.deploymentSettings.AWS.CloudfrontDistribution),
+			InvalidationBatch: &cftypes.InvalidationBatch{
+				CallerReference: aws.String(fmt.Sprintf("MIDAS-%s", strconv.FormatInt(time.Now().Unix(), 10))),
+				Paths: &cftypes.Paths{
+					Quantity: aws.Int32(int32(len(paths))),
+					Items:    paths,
+				},
+			},
+		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

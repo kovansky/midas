@@ -307,7 +307,11 @@ func (h StrapiToHugoHandler) deploy(cfg *midas.Site, draft bool) error {
 
 	var deploymentService midas.Deployment
 	if dpl, ok := midas.DeploymentTargets[dplSettings.Target]; ok {
-		deploymentService = dpl(*cfg, dplSettings)
+		var err error
+
+		if deploymentService, err = dpl(*cfg, dplSettings); err != nil {
+			return midas.Errorf(midas.ErrInternal, "could not create deployment %s: %s", dplSettings.Target, err)
+		}
 	} else {
 		return midas.Errorf(midas.ErrUnaccepted, "deployment target %s is not accepted", dplSettings.Target)
 	}

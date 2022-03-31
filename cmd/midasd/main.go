@@ -186,8 +186,8 @@ func (m *Main) Run(_ context.Context) (err error) {
 		},
 	}
 
-	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) midas.Deployment{
-		"aws": func(site midas.Site, settings midas.DeploymentSettings) midas.Deployment {
+	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error){
+		"aws": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
 			return aws.New(site, settings)
 		},
 	}

@@ -17,9 +17,10 @@ type DeploymentSettings struct {
 }
 
 type AWSDeploymentSettigs struct {
-	BucketName string `json:"bucketName"`
-	Region     string `json:"region"`
-	AccessKey  string `json:"accessKey"`
-	SecretKey  string `json:"secretKey"`
-	S3Prefix   string `json:"s3Prefix"`
+	BucketName             string `json:"bucketName"`
+	Region                 string `json:"region"`
+	AccessKey              string `json:"accessKey"`
+	SecretKey              string `json:"secretKey"`
+	S3Prefix               string `json:"s3Prefix"`
+	CloudfrontDistribution string `json:"cloudfrontDistribution,omitempty"`
 }
