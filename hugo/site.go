@@ -80,6 +80,8 @@ func (s SiteService) constructBuildArgs(useCache, isDraft bool) (arg []string) {
 	if !isDraft {
 		if s.Site.OutputSettings.Build != "" {
 			arg = append(arg, "-d", s.Site.OutputSettings.Build)
+		} else {
+			s.Site.OutputSettings.Build = "public"
 		}
 	} else {
 		arg = append(arg, "-d")
