@@ -135,12 +135,14 @@ func (d *Deployment) uploadFile(uploader *manager.Uploader, file *os.File, rel s
 	fileKey = strings.ReplaceAll(fileKey, "\\", "/")
 
 	contentType := getFileContentType(file.Name())
+	cacheControl := getFileCacheControl(file.Name())
 
 	_, err := uploader.Upload(context.Background(), &s3.PutObjectInput{
-		Bucket:      aws.String(d.deploymentSettings.AWS.BucketName),
-		Key:         aws.String(fileKey),
-		Body:        file,
-		ContentType: aws.String(contentType),
+		Bucket:       aws.String(d.deploymentSettings.AWS.BucketName),
+		Key:          aws.String(fileKey),
+		Body:         file,
+		ContentType:  aws.String(contentType),
+		CacheControl: aws.String(cacheControl),
 	})
 	if err != nil {
 		return err
@@ -192,7 +194,7 @@ func (d *Deployment) deleteObjects(objects []string) error {
 
 // invalidateCloudfront invalidates the HTML files in the Cloudfront distribution.
 func (d *Deployment) invalidateCloudfront() error {
-	paths := []string{"/*.html"}
+	paths := []string{"/*"}
 
 	if d.deploymentSettings.AWS.CloudfrontDistribution != "" {
 		_, err := d.cfClient.CreateInvalidation(context.Background(), &cloudfront.CreateInvalidationInput{
@@ -214,7 +216,7 @@ func (d *Deployment) invalidateCloudfront() error {
 	return nil
 }
 
-// reteiveFiles walks the public directory and returns a channel of files to be uploaded.
+// retrieveFiles walks the public directory and returns a channel of files to be uploaded.
 func (d *Deployment) retrieveFiles() (fileWalk, error) {
 	walker := make(fileWalk)
 
@@ -227,6 +229,23 @@ func (d *Deployment) retrieveFiles() (fileWalk, error) {
 	}()
 
 	return walker, nil
+}
+
+// getFileCacheControl returns the max-age value for the file based on it's type.
+func getFileCacheControl(fileName string) string {
+	halfYear := int64(60 * 60 * 24 * 182)
+
+	switch {
+	case strings.HasSuffix(fileName, ".html"):
+		return "no-cache, no-store"
+	case strings.HasSuffix(fileName, ".js"), strings.HasSuffix(fileName, ".css"),
+		strings.HasSuffix(fileName, ".svg"), strings.HasSuffix(fileName, ".png"),
+		strings.HasSuffix(fileName, ".jpg"), strings.HasSuffix(fileName, ".jpeg"),
+		strings.HasSuffix(fileName, ".gif"):
+		return fmt.Sprintf("public, max-age=%d", halfYear)
+	default:
+		return fmt.Sprintf("public, max-age=%d", halfYear)
+	}
 }
 
 // getFileContentType returns the content type of the file based on the extension.
