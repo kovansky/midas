@@ -7,15 +7,21 @@
 package midas
 
 type Site struct {
-	SiteName        string                   `json:"siteName"`
-	RootDir         string                   `json:"rootDir"`
-	OutputSettings  OutputSettings           `json:"outputSettings"`
-	BuildDrafts     bool                     `json:"buildDrafts"`
-	DraftsUrl       string                   `json:"draftsUrl"`
-	Service         string                   `json:"service"`
+	SiteName string `json:"siteName"`
+	Service  string `json:"service"`
+
+	RootDir        string         `json:"rootDir"`
+	OutputSettings OutputSettings `json:"outputSettings"`
+
+	BuildDrafts bool   `json:"buildDrafts,default=false"`
+	DraftsUrl   string `json:"draftsUrl"`
+
 	Registry        RegistrySettings         `json:"registry"`
 	CollectionTypes map[string]ModelSettings `json:"collectionTypes"`
 	SingleTypes     map[string]ModelSettings `json:"singleTypes"`
+
+	Deployment       DeploymentSettings `json:"deployment"`
+	DraftsDeployment DeploymentSettings `json:"draftsDeployment"`
 }
 
 type OutputSettings struct {
@@ -39,4 +45,5 @@ type SiteService interface {
 	CreateEntry(payload Payload) (string, error)
 	UpdateEntry(payload Payload) (string, error)
 	DeleteEntry(payload Payload) (string, error)
+	UpdateSingle(payload Payload) (string, error)
 }

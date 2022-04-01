@@ -80,6 +80,8 @@ func (s SiteService) constructBuildArgs(useCache, isDraft bool) (arg []string) {
 	if !isDraft {
 		if s.Site.OutputSettings.Build != "" {
 			arg = append(arg, "-d", s.Site.OutputSettings.Build)
+		} else {
+			s.Site.OutputSettings.Build = "public"
 		}
 	} else {
 		arg = append(arg, "-d")
@@ -294,6 +296,56 @@ func (s SiteService) DeleteEntry(payload midas.Payload) (string, error) {
 	return entryPath, nil
 }
 
+func (s SiteService) UpdateSingle(payload midas.Payload) (string, error) {
+	// Set output directory
+	modelName := payload.Metadata()["model"].(string)
+	model, _ := s.getModel(modelName)
+	outputDir := model.OutputDir
+	if !filepath.IsAbs(outputDir) {
+		outputDir = filepath.Join(s.Site.RootDir, outputDir)
+	}
+
+	// Check if output dir exists, attempt to create it if it doesn't
+	if !fileExists(outputDir) {
+		err := os.Mkdir(outputDir, 0775)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// Format output filename
+	outputPath := filepath.Join(outputDir, fmt.Sprintf("%s.json", modelName))
+
+	// Sanitize the entry
+	entry := payload.Entry()
+	entry = sanitizeHtmlInMap(entry)
+
+	payload.SetEntry(entry)
+
+	asJson, err := payload.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+
+	// Open output file
+	output, err := os.OpenFile(outputPath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0775)
+	defer func(outout *os.File) {
+		_ = output.Close()
+	}(output)
+
+	if err != nil {
+		return "", err
+	}
+
+	// Write the output
+	_, err = output.Write(asJson)
+	if err != nil {
+		return "", err
+	}
+
+	return outputPath, nil
+}
+
 // EntryId generates the entry to be used in registry.
 func (s SiteService) EntryId(payload midas.Payload) string {
 	return fmt.Sprintf("%v-%v", payload.Metadata()["model"], payload.Entry()["id"])
@@ -331,4 +383,55 @@ func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Pay
 	}
 
 	return nil
+}
+
+// sanitizeHtmlInMap iterates (recursively) through given map and passes each value through HTML sanitizer.
+func sanitizeHtmlInMap(entry map[string]interface{}) map[string]interface{} {
+	output := make(map[string]interface{})
+
+	for key, value := range entry {
+		// Check value type
+		switch value.(type) {
+		case map[string]interface{}:
+			output[key] = sanitizeHtmlInMap(value.(map[string]interface{}))
+			break
+		case []interface{}:
+			output[key] = sanitizeHtmlInSlice(value.([]interface{}))
+			break
+		default:
+			if stringed, ok := value.(string); ok {
+				output[key] = midas.Sanitizer.Sanitize(stringed)
+			} else {
+				output[key] = value
+			}
+
+		}
+	}
+
+	return output
+}
+
+// sanitizeHtmlInSlice iterates (recursively) through given slice and passes each value through HTML sanitizer.
+func sanitizeHtmlInSlice(entry []interface{}) []interface{} {
+	output := make([]interface{}, len(entry))
+
+	for key, value := range entry {
+		// Check value type
+		switch value.(type) {
+		case map[string]interface{}:
+			output[key] = sanitizeHtmlInMap(value.(map[string]interface{}))
+			break
+		case []interface{}:
+			output[key] = sanitizeHtmlInSlice(value.([]interface{}))
+			break
+		default:
+			if stringed, ok := value.(string); ok {
+				output[key] = midas.Sanitizer.Sanitize(stringed)
+			} else {
+				output[key] = value
+			}
+		}
+	}
+
+	return output
 }

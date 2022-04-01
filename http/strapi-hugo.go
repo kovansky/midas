@@ -10,8 +10,10 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httplog"
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/strapi"
+	"github.com/rs/zerolog"
 	"io"
 	"net/http"
 )
@@ -19,6 +21,7 @@ import (
 type StrapiToHugoHandler struct {
 	HugoSite midas.SiteService
 	Payload  midas.Payload
+	log      zerolog.Logger
 }
 
 func (s *Server) registerStrapiToHugoRoutes(r chi.Router) {
@@ -63,9 +66,12 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log := httplog.LogEntry(r.Context())
+
 	handler := &StrapiToHugoHandler{
 		HugoSite: hugoSite,
 		Payload:  payload,
+		log:      log,
 	}
 	defer func() {
 		registry, _ := handler.HugoSite.GetRegistryService()
@@ -94,6 +100,14 @@ func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log := httplog.LogEntry(r.Context())
+
+	handler := &StrapiToHugoHandler{
+		HugoSite: hugoSite,
+		Payload:  &strapi.Payload{},
+		log:      log,
+	}
+
 	useCache := true
 	if r.URL.Query().Has("cache") {
 		switch r.URL.Query().Get("cache") {
@@ -103,6 +117,11 @@ func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = hugoSite.BuildSite(useCache); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := handler.runDeploys(r); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -161,12 +180,20 @@ func (h StrapiToHugoHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		Error(w, r, midas.Errorf(midas.ErrInvalid, "event %s is invalid", h.Payload.Event()))
 		return
 	}
-
-	// w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(true); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := h.runDeploys(r); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -185,11 +212,26 @@ func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if err := h.runDeploys(r); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.Request) {
+	if _, err := h.HugoSite.UpdateSingle(h.Payload); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	if err := h.HugoSite.BuildSite(false); err != nil {
+		Error(w, r, err)
+		return
+	}
+
+	if err := h.runDeploys(r); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -208,6 +250,11 @@ func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if err := h.runDeploys(r); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -222,5 +269,57 @@ func (h StrapiToHugoHandler) handleDeleteCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if err := h.runDeploys(r); err != nil {
+		Error(w, r, err)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// runDeploys executes both final and the draft deploys.
+func (h StrapiToHugoHandler) runDeploys(r *http.Request) error {
+	cfg := midas.SiteConfigFromContext(r.Context())
+
+	if err := h.deploy(cfg, false); err != nil {
+		return err
+	}
+
+	if err := h.deploy(cfg, true); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// deploy executes the uploading process.
+func (h StrapiToHugoHandler) deploy(cfg *midas.Site, draft bool) error {
+	var dplSettings midas.DeploymentSettings
+	if draft {
+		dplSettings = cfg.DraftsDeployment
+	} else {
+		dplSettings = cfg.Deployment
+	}
+
+	if !dplSettings.Enabled {
+		return nil
+	}
+
+	var deploymentService midas.Deployment
+	if dpl, ok := midas.DeploymentTargets[dplSettings.Target]; ok {
+		var err error
+
+		if deploymentService, err = dpl(*cfg, dplSettings); err != nil {
+			return midas.Errorf(midas.ErrInternal, "could not create deployment %s: %s", dplSettings.Target, err)
+		}
+	} else {
+		return midas.Errorf(midas.ErrUnaccepted, "deployment target %s is not accepted", dplSettings.Target)
+	}
+
+	h.log.Debug().Msgf("Deploying %s to %s", cfg.SiteName, dplSettings.Target)
+	if err := deploymentService.Deploy(); err != nil {
+		return err
+	}
+
+	return nil
 }
