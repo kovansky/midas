@@ -55,17 +55,11 @@ func (s SiteService) BuildSite(useCache bool) error {
 	cmd := exec.Command("hugo", arg...)
 	cmd.Dir = s.Site.RootDir
 
-	out, err := cmd.Output()
-
-	stdout, _ := cmd.StdoutPipe()
-	stderr, _ := cmd.StderrPipe()
+	out, err := cmd.CombinedOutput()
 
 	if err != nil {
 		return midas.Errorf(midas.ErrInternal, "hugo build errored: %s\ncommand output: %s", err, out)
 	}
-
-	println("OUT:", stdout)
-	println("ERR:", stderr)
 
 	if s.Site.BuildDrafts {
 		if err = s.BuildDrafts(); err != nil {
