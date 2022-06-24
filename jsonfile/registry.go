@@ -34,7 +34,7 @@ func NewRegistryService(site midas.Site) midas.RegistryService {
 	}
 }
 
-// OpenStorage opens the registry file (and creates it if doesn't exist) and then
+// OpenStorage opens the registry file (and creates it if it doesn't exist) and then
 // unmarshals the file content into the registry.
 func (r *RegistryService) OpenStorage() error {
 	file, err := os.OpenFile(r.path, os.O_RDWR|os.O_CREATE, 0775)

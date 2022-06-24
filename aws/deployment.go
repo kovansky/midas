@@ -38,6 +38,8 @@ func (f fileWalk) Walk(path string, info os.FileInfo, err error) error {
 	return nil
 }
 
+var _ midas.Deployment = (*Deployment)(nil)
+
 type Deployment struct {
 	site               midas.Site
 	deploymentSettings midas.DeploymentSettings

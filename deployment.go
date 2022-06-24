@@ -11,9 +11,10 @@ type Deployment interface {
 }
 
 type DeploymentSettings struct {
-	Enabled bool                 `json:"enabled,default=false"`
-	Target  string               `json:"target"` // Can be: AWS
-	AWS     AWSDeploymentSettigs `json:"aws,omitempty"`
+	Enabled bool                  `json:"enabled,default=false"`
+	Target  string                `json:"target"` // Can be: AWS, SSH
+	AWS     AWSDeploymentSettigs  `json:"aws,omitempty"`
+	SSH     SSHDeploymentSettings `json:"ssh,omitempty"`
 }
 
 type AWSDeploymentSettigs struct {
@@ -23,4 +24,15 @@ type AWSDeploymentSettigs struct {
 	SecretKey              string `json:"secretKey"`
 	S3Prefix               string `json:"s3Prefix"`
 	CloudfrontDistribution string `json:"cloudfrontDistribution,omitempty"`
+}
+
+type SSHDeploymentSettings struct {
+	Host        string `json:"host"`
+	Port        *int   `json:"port"`
+	User        string `json:"user"`
+	Method      string `json:"method"`
+	Password    string `json:"password,omitempty"`
+	Key         string `json:"key,omitempty"`
+	KeyPassword string `json:"keyPassword,omitempty"`
+	Path        string `json:"path"`
 }
