@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/walk"
-	"log"
 	"os"
 	"path/filepath"
 )
@@ -49,46 +48,38 @@ func New(site midas.Site, deploymentSettings midas.DeploymentSettings) (midas.De
 	}, nil
 }
 
+// Deploy uploads the built files to the remote SFTP server.
 func (d *Deployment) Deploy() error {
-	// Retrieve files to upload.
-	fileWalk, err := d.retrieveFiles()
+	// Retrieve local files.
+	walker, err := d.retrieveFiles()
 	if err != nil {
 		return err
 	}
 
-	// Get files as file map
-	fileMap, err := d.getFileMap(fileWalk)
+	// And get local files as file map
+	fileMap, err := d.getFileMap(walker)
 	if err != nil {
 		return err
 	}
 
-	log.Println("Local")
-	for filePath, file := range fileMap {
-		log.Printf("%s: name - %s (is dir? %t), lastMod - %s", filePath, file.Name(), file.IsDir(), file.ModTime())
-	}
+	// Get remote files.
+	remoteFiles, err := d.remoteFiles()
 
-	log.Println("Remote")
-	remoteFiles, err := d.RemoteFiles()
-
-	log.Println("Diff")
+	// Generate diffs
 	uploads, removals := fileMap.Diff(remoteFiles)
-	log.Println("# Uploads:")
-	for filePath := range uploads {
-		log.Printf("%s", filePath)
-	}
-	log.Println("# Removals:")
-	for filePath := range removals {
-		log.Printf("%s", filePath)
-	}
 
 	return nil
 }
 
-func (d *Deployment) RemoteFiles() (walk.FileMap, error) {
+// remoteFiles returns a map of remote files indexed by their relative path.
+func (d *Deployment) remoteFiles() (walk.FileMap, error) {
 	err := d.sftpClient.Connect()
 	if err != nil {
 		return nil, err
 	}
+	defer func(sftpClient *Client) {
+		_ = sftpClient.Close()
+	}(&d.sftpClient)
 
 	files, errors := d.sftpClient.RemoteFiles()
 	if errors != nil {
@@ -99,12 +90,6 @@ func (d *Deployment) RemoteFiles() (walk.FileMap, error) {
 
 		return nil, fmt.Errorf("errors getting remote files:%s\n", errorsString)
 	}
-
-	for filePath, file := range files {
-		log.Printf("%s: name - %s (is dir? %t), lastMod - %s", filePath, file.Name(), file.IsDir(), file.ModTime())
-	}
-
-	_ = d.sftpClient.Close()
 
 	return files, nil
 }

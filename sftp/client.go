@@ -129,6 +129,18 @@ func (c *Client) RemoteFiles() (walk.FileMap, []error) {
 	return files, errors
 }
 
+// RemoveEmptyDirs removes empty directories from the remote server.
+func (c *Client) RemoveEmptyDirs() error {
+	session, err := c.sshClient.NewSession()
+	if err != nil {
+		return err
+	}
+
+	err = session.Run(fmt.Sprintf("cd %s && find . -type d -empty -delete", c.rootDir))
+
+	return err
+}
+
 // authenticationMethod returns the authentication method name and the authentication method slice based on the provided SFTP configuration.
 //
 // If method field was not configured, it checks if password field was set and uses it; otherwise it uses "none" method.
