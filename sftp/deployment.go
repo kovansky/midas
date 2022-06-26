@@ -68,15 +68,26 @@ func (d *Deployment) Deploy() error {
 	}
 
 	log.Println("Remote")
-	err = d.RemoteFiles()
+	remoteFiles, err := d.RemoteFiles()
+
+	log.Println("Diff")
+	uploads, removals := fileMap.Diff(remoteFiles)
+	log.Println("# Uploads:")
+	for filePath := range uploads {
+		log.Printf("%s", filePath)
+	}
+	log.Println("# Removals:")
+	for filePath := range removals {
+		log.Printf("%s", filePath)
+	}
 
 	return nil
 }
 
-func (d *Deployment) RemoteFiles() error {
+func (d *Deployment) RemoteFiles() (walk.FileMap, error) {
 	err := d.sftpClient.Connect()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	files, errors := d.sftpClient.RemoteFiles()
@@ -86,7 +97,7 @@ func (d *Deployment) RemoteFiles() error {
 			errorsString += err.Error() + "\n"
 		}
 
-		return fmt.Errorf("errors getting remote files:%s\n", errorsString)
+		return nil, fmt.Errorf("errors getting remote files:%s\n", errorsString)
 	}
 
 	for filePath, file := range files {
@@ -95,7 +106,7 @@ func (d *Deployment) RemoteFiles() error {
 
 	_ = d.sftpClient.Close()
 
-	return nil
+	return files, nil
 }
 
 // retrieveFiles walks the public directory and returns a channel of files to be uploaded.
