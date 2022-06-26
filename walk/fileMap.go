@@ -8,27 +8,57 @@ package walk
 
 import "os"
 
+// FileOperationType is used to identify what kind of operation should be performed on a file.
+type FileOperationType int64
+
+const (
+	// UploadFile means that file should be uploaded (created).
+	UploadFile FileOperationType = iota
+	// UpdateFile means that file should be uploaded (modified).
+	UpdateFile
+	// RemoveFile means that file should be removed.
+	RemoveFile
+)
+
 // FileMap is type for holding a map of files information indexed by their name (relative path).
 type FileMap map[string]os.FileInfo
 
-// Diff generates two maps of files: one with files to be uploaded (newer or added) and one with files to delete.
-func (f FileMap) Diff(other FileMap) (upload, remove FileMap) {
-	upload = make(FileMap)
-	remove = make(FileMap)
+type FileOperation struct {
+	Path string
+	Info os.FileInfo
+	Type FileOperationType
+}
 
+// Diff compares the two filetrees and returns a list of differences (files to be removed, updated or created).
+//
+// The differences are relative to the calling FileMap, which means that for example UploadFile opearion should transfer
+// the file FROM the calling FileMap location to the other FileMap location.
+func (f FileMap) Diff(other FileMap) (diff []FileOperation) {
 	for name, info := range f {
 		if otherInfo, ok := other[name]; !ok {
-			upload[name] = info
+			diff = append(diff, FileOperation{
+				Path: name,
+				Info: info,
+				Type: UploadFile,
+			})
 		} else {
 			if info.ModTime().After(otherInfo.ModTime()) {
-				upload[name] = info
+				diff = append(diff, FileOperation{
+					Path: name,
+					Info: info,
+					Type: UpdateFile,
+				})
 			}
 		}
 	}
 
 	for name, info := range other {
 		if _, ok := f[name]; !ok {
-			remove[name] = info
+			diff = append(diff, FileOperation{
+				Path: name,
+				Info: info,
+				Type: RemoveFile,
+			})
 		}
 	}
 

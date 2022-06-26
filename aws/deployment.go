@@ -83,7 +83,6 @@ func (d *Deployment) Deploy() error {
 	for path := range walker {
 		err = func() error {
 			rel, err := filepath.Rel(d.publicPath, path)
-
 			if err != nil {
 				return err
 			}

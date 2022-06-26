@@ -42,7 +42,7 @@ func New(site midas.Site, deploymentSettings midas.DeploymentSettings) (midas.De
 	return &Deployment{
 		site:               site,
 		deploymentSettings: deploymentSettings,
-		publicPath:         publicPath,
+		publicPath:         filepath.ToSlash(publicPath),
 
 		sftpClient: sftpClient,
 	}, nil
@@ -66,7 +66,50 @@ func (d *Deployment) Deploy() error {
 	remoteFiles, err := d.remoteFiles()
 
 	// Generate diffs
-	uploads, removals := fileMap.Diff(remoteFiles)
+	diff := fileMap.Diff(remoteFiles)
+
+	err = d.sftpClient.Connect()
+	if err != nil {
+		return err
+	}
+	defer func(sftpClient *Client) {
+		_ = sftpClient.Close()
+	}(&d.sftpClient)
+
+	for _, fileOp := range diff {
+		err := d.syncFile(fileOp)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// syncFile performs a file operation.
+func (d *Deployment) syncFile(operation walk.FileOperation) error {
+	switch operation.Type {
+	case walk.UploadFile, walk.UpdateFile:
+		absolute := filepath.ToSlash(filepath.Clean(filepath.Join(d.publicPath, operation.Path)))
+
+		handler, err := os.Open(absolute)
+		if err != nil {
+			return err
+		}
+		defer func(handler *os.File) {
+			_ = handler.Close()
+		}(handler)
+
+		if err = d.sftpClient.UploadNewFile(operation.Path, handler); err != nil {
+			return err
+		}
+
+		break
+	case walk.RemoveFile:
+		if err := d.sftpClient.RemoveFile(operation.Path); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -121,6 +164,7 @@ func (d *Deployment) getFileMap(fileWalk walk.FileWalk) (walk.FileMap, error) {
 		}
 
 		relPath, _ := filepath.Rel(d.publicPath, file)
+		relPath = filepath.ToSlash(relPath)
 
 		fileMap[relPath] = fileInfo
 	}

@@ -12,7 +12,9 @@ import (
 	"github.com/kovansky/midas/walk"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -72,8 +74,6 @@ func (c *Client) Connect() error {
 
 	addr := fmt.Sprintf("%s:%d", c.sshConfig.Host, port)
 
-	fmt.Printf("Trying to handshake with %s...\n", addr)
-
 	// Connect and perform a handshake
 	connection, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
@@ -87,6 +87,7 @@ func (c *Client) Connect() error {
 
 	c.sshClient = connection
 	c.sftpClient = sftpConnection
+	c.closed = false
 	return nil
 }
 
@@ -120,6 +121,7 @@ func (c *Client) RemoteFiles() (walk.FileMap, []error) {
 
 		stat := walker.Stat()
 		relPath, _ := filepath.Rel(c.rootDir, walker.Path())
+		relPath = filepath.ToSlash(relPath)
 
 		if relPath != "" && !stat.IsDir() {
 			files[relPath] = stat
@@ -139,6 +141,30 @@ func (c *Client) RemoveEmptyDirs() error {
 	err = session.Run(fmt.Sprintf("cd %s && find . -type d -empty -delete", c.rootDir))
 
 	return err
+}
+
+// UploadNewFile creates a source file in the remote server.
+func (c *Client) UploadNewFile(filePath string, file *os.File) error {
+	absolutePath := filepath.ToSlash(filepath.Clean(filepath.Join(c.rootDir, filePath)))
+
+	dstFile, err := c.sftpClient.Create(absolutePath)
+	if err != nil {
+		return err
+	}
+	defer func(dstFile *sftp.File) {
+		_ = dstFile.Close()
+	}(dstFile)
+
+	_, err = io.Copy(dstFile, file)
+
+	return err
+}
+
+// RemoveFile removes a file from the remote server.
+func (c *Client) RemoveFile(filePath string) error {
+	absolutePath := filepath.ToSlash(filepath.Clean(filepath.Join(c.rootDir, filePath)))
+
+	return c.sftpClient.Remove(absolutePath)
 }
 
 // authenticationMethod returns the authentication method name and the authentication method slice based on the provided SFTP configuration.
