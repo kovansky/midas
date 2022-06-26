@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "midas-config",
+  "description": "Configuration for the Midas server",
+  "type": "object",
+  "properties": {
+    "domain": {
+      "type": "string",
+      "description": "The domain name on which the Midas server should run. Overwrites the addr setting",
+      "default": ""
+    },
+    "addr": {
+      "type": "string",
+      "description": "The address (incl. port) on which the Midas server should run",
+      "default": "127.0.0.1:8443"
+    },
+    "rollbarToken": {
+      "type": "string",
+      "description": "The token for the Rollbar integration (error logging)",
+      "default": ""
+    },
+    "sites": {
+      "type": "object",
+      "description": "The sites that are connected to Midas",
+      "default": {},
+      "patternProperties": {
+        "^[^$].*$": {
+          "type": "object",
+          "description": "The configuration for a site. The key is also an API key to be used in requests regarding this site.",
+          "properties": {
+            "siteName": {
+              "type": "string",
+              "description": "The name of the site",
+              "default": ""
+            },
+            "service": {
+              "type": "string",
+              "description": "The SSG which is used to build the site",
+              "enum": [
+                "hugo"
+              ]
+            },
+            "rootDir": {
+              "type": "string",
+              "description": "The root directory of the site files",
+              "default": ""
+            },
+            "outputSettings": {
+              "type": "object",
+              "description": "Settings of where the output (generated files) should be stored. Optional",
+              "properties": {
+                "build": {
+                  "type": "string",
+                  "description": "The directory where the main build output should be stored. Default value depends on the service"
+                },
+                "draft": {
+                  "type": "string",
+                  "description": "The directory where the builds containing drafts (site previews) output should be stored. Default value depends on the service"
+                }
+              }
+            },
+            "buildDrafts": {
+              "type": "boolean",
+              "description": "Should the preview site (with drafts) be build as well",
+              "default": false
+            },
+            "draftsUrl": {
+              "type": "string",
+              "description": "The URL to be passed to the SSG as an baseURL on drafts build"
+            },
+            "registry": {
+              "type": "object",
+              "description": "The registry which is used to build the site",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "What type of registry should be used",
+                  "enum": [
+                    "jsonfile"
+                  ]
+                },
+                "location": {
+                  "type": "string",
+                  "description": "The location or connection string of the registry. Default depends on the registry type"
+                }
+              },
+              "required": [
+                "type",
+                "location"
+              ]
+            },
+            "collectionTypes": {
+              "type": "object",
+              "description": "Types of content that should be treated as collections (collection = there are multiple entries per type)",
+              "patternProperties": {
+                "^[^$].*$": {
+                  "type": "object",
+                  "description": "The key is the name of the type",
+                  "properties": {
+                    "archetypePath": {
+                      "type": "string",
+                      "description": "Path to the type archetype. Will be used to generate new entries. File can contain Go tempalte."
+                    },
+                    "outputDir": {
+                      "type": "string",
+                      "description": "In which directory the entries of this type should be generated."
+                    }
+                  }
+                }
+              }
+            },
+            "singleTypes": {
+              "type": "object",
+              "description": "Types of content that should be treated as single entries (there is just one entry per type)",
+              "patternProperties": {
+                "^[^$].*$": {
+                  "type": "object",
+                  "description": "The key is the name of the type",
+                  "properties": {
+                    "outputDir": {
+                      "type": "string",
+                      "description": "The directory in which the JSON file with data will be generated."
+                    }
+                  }
+                }
+              }
+            },
+            "deployment": {
+              "type": "object",
+              "description": "Settings for site deployment",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Is deployment enabled"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "Name of the provider of the cloud services",
+                  "enum": [
+                    "aws"
+                  ]
+                },
+                "aws": {
+                  "type": "object",
+                  "description": "Configuration for AWS deployment",
+                  "properties": {
+                    "bucketName": {
+                      "type": "string",
+                      "description": "Name of the AWS S3 Bucket to be used"
+                    },
+                    "accessKey": {
+                      "type": "string",
+                      "description": "AWS Access Key"
+                    },
+                    "secretKey": {
+                      "type": "string",
+                      "description": "AWS Secret Key"
+                    },
+                    "region": {
+                      "type": "string",
+                      "description": "Name of the S3 bucket region."
+                    },
+                    "cloudfrontDistribution": {
+                      "type": "string",
+                      "description": "Id of the AWS Cloudfront distribuition. If provided, all old files in the distribution will be invalidated after new deployment."
+                    }
+                  }
+                },
+                "ssh": {
+                  "type": "object",
+                  "description": "Configuration for SSH deployment",
+                  "properties": {
+                    "host": {
+                      "type": "string",
+                      "description": "Server hostname"
+                    },
+                    "port": {
+                      "type": "integer",
+                      "description": "Server port",
+                      "default": 22
+                    },
+                    "method": {
+                      "type": "string",
+                      "description": "Authentication method to use",
+                      "enum": [
+                        "none",
+                        "password",
+                        "key"
+                      ]
+                    },
+                    "user": {
+                      "type": "string",
+                      "description": "Username"
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": "Password (in case of password method)"
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "Path to the private key (in case of key method)"
+                    },
+                    "keyPassphrase": {
+                      "type": "string",
+                      "description": "Password to unlock the private key if needed (in case of key method)"
+                    },
+                    "path": {
+                      "type": "string",
+                      "description": "Remote root directory of the website"
+                    }
+                  },
+                  "required": [
+                    "host",
+                    "path"
+                  ]
+                }
+              }
+            },
+            "draftsDeployment": {
+              "type": "object",
+              "description": "Settings for site deployment",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Is deployment enabled"
+                },
+                "target": {
+                  "type": "string",
+                  "description": "Name of the provider of the cloud services",
+                  "enum": [
+                    "aws",
+                    "sftp"
+                  ]
+                },
+                "aws": {
+                  "type": "object",
+                  "description": "Configuration for AWS deployment",
+                  "properties": {
+                    "bucketName": {
+                      "type": "string",
+                      "description": "Name of the AWS S3 Bucket to be used"
+                    },
+                    "accessKey": {
+                      "type": "string",
+                      "description": "AWS Access Key"
+                    },
+                    "secretKey": {
+                      "type": "string",
+                      "description": "AWS Secret Key"
+                    },
+                    "region": {
+                      "type": "string",
+                      "description": "Name of the S3 bucket region."
+                    },
+                    "cloudfrontDistribution": {
+                      "type": "string",
+                      "description": "Id of the AWS Cloudfront distribuition. If provided, all old files in the distribution will be invalidated after new deployment."
+                    }
+                  }
+                },
+                "sftp": {
+                  "type": "object",
+                  "description": "Configuration for SFTP deployment",
+                  "properties": {
+                    "host": {
+                      "type": "string",
+                      "description": "Server hostname"
+                    },
+                    "port": {
+                      "type": "integer",
+                      "description": "Server port",
+                      "default": 22
+                    },
+                    "method": {
+                      "type": "string",
+                      "description": "Authentication method to use",
+                      "enum": [
+                        "none",
+                        "password",
+                        "key"
+                      ]
+                    },
+                    "user": {
+                      "type": "string",
+                      "description": "Username"
+                    },
+                    "password": {
+                      "type": "string",
+                      "description": "Password (in case of password method)"
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "Path to the private key (in case of key method)"
+                    },
+                    "keyPassphrase": {
+                      "type": "string",
+                      "description": "Password to unlock the private key if needed (in case of key method)"
+                    },
+                    "path": {
+                      "type": "string",
+                      "description": "Remote root directory of the website"
+                    }
+                  },
+                  "required": [
+                    "host",
+                    "path"
+                  ]
+                }
+              }
+            }
+          },
+          "required": [
+            "siteName",
+            "service",
+            "rootDir",
+            "registry"
+          ]
+        }
+      }
+    }
+  }
+}
