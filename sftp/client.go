@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
-	"strings"
+	"path/filepath"
 )
 
 type Client struct {
@@ -41,7 +41,7 @@ func NewClient(sshConfig midas.SSHDeploymentSettings) *Client {
 	}
 }
 
-// Connect establishes a connection to the remote server using SSH protocol using given configuration.
+// Connect establishes a connection to the remote server using SFTP protocol using given configuration.
 func (c *Client) Connect() error {
 	var hostKey ssh.PublicKey
 	config := &ssh.ClientConfig{
@@ -64,7 +64,7 @@ func (c *Client) Connect() error {
 		}
 	}
 
-	// Set SSH sshClient address
+	// Set SFTP sshClient address
 	port := 22
 	if c.sshConfig.Port != nil {
 		port = *c.sshConfig.Port
@@ -118,17 +118,18 @@ func (c *Client) RemoteFiles() (walk.FileMap, []error) {
 			errors = append(errors, err)
 		}
 
-		relPath := strings.TrimPrefix(walker.Path(), c.rootDir)
+		stat := walker.Stat()
+		relPath, _ := filepath.Rel(c.rootDir, walker.Path())
 
-		if relPath != "" {
-			files[relPath] = walker.Stat()
+		if relPath != "" && !stat.IsDir() {
+			files[relPath] = stat
 		}
 	}
 
 	return files, errors
 }
 
-// authenticationMethod returns the authentication method name and the authentication method slice based on the provided SSH configuration.
+// authenticationMethod returns the authentication method name and the authentication method slice based on the provided SFTP configuration.
 //
 // If method field was not configured, it checks if password field was set and uses it; otherwise it uses "none" method.
 func (c *Client) authenticationMethod() (*string, *[]ssh.AuthMethod, error) {

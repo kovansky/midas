@@ -137,7 +137,7 @@ func (m *Main) Close() error {
 // Run executes the program. The configuration should already be set up
 // before calling this function.
 func (m *Main) Run(_ context.Context) (err error) {
-	log.Printf("Starting midas SSH Test\n")
+	log.Printf("Starting midas SFTP Test\n")
 
 	midas.RegistryServices = map[string]func(site midas.Site) midas.RegistryService{
 		"jsonfile": func(site midas.Site) midas.RegistryService {
@@ -153,37 +153,19 @@ func (m *Main) Run(_ context.Context) (err error) {
 
 	midas.Sanitizer = bluemonday.NewSanitizerService()
 
-	var sftpClient *sftp.Client
+	var deployment midas.Deployment
 	if site := mapFirstEntry(m.Config.Sites); site == nil {
 		return fmt.Errorf("no sites configured")
 	} else {
-		sftpClient = sftp.NewClient(site.Deployment.SSH)
-	}
-
-	err = sftpClient.Connect()
-	if err != nil {
-		return err
-	}
-
-	m.SFTPClient = sftpClient
-
-	files, errors := sftpClient.RemoteFiles()
-	if errors != nil {
-		var errorsString string
-		for _, err := range errors {
-			errorsString += err.Error() + "\n"
+		deployment, err = sftp.New(*site, site.Deployment)
+		if err != nil {
+			return err
 		}
-
-		return fmt.Errorf("errors getting remote files:%s\n", errorsString)
 	}
 
-	for filePath, file := range files {
-		log.Printf("%s: name - %s (is dir? %t), lastMod - %s", filePath, file.Name(), file.IsDir(), file.ModTime())
-	}
+	err = deployment.Deploy()
 
-	_ = sftpClient.Close()
-
-	return nil
+	return
 }
 
 // expand changes tilde in path to user's home directory.

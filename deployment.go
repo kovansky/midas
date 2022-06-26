@@ -12,9 +12,9 @@ type Deployment interface {
 
 type DeploymentSettings struct {
 	Enabled bool                  `json:"enabled,default=false"`
-	Target  string                `json:"target"` // Can be: AWS, SSH
+	Target  string                `json:"target"` // Can be: AWS, SFTP
 	AWS     AWSDeploymentSettigs  `json:"aws,omitempty"`
-	SSH     SSHDeploymentSettings `json:"ssh,omitempty"`
+	SFTP    SSHDeploymentSettings `json:"ssh,omitempty"`
 }
 
 type AWSDeploymentSettigs struct {
