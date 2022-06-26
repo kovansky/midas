@@ -7,7 +7,7 @@
 
 ## What am I?
 
-Midas is an web application that allows to generate static websites using SSGs using data from headless CMS.
+Midas is a web application that allows to generate static websites using SSGs using data from headless CMS.
 
 ## How does it work?
 
@@ -36,6 +36,7 @@ site (e.g. adds a new post) and regenerates it (builds).
 - [AWS](https://aws.amazon.com/)
     - Files upload to [AWS S3](https://aws.amazon.com/s3/).
     - [CloudFront](https://aws.amazon.com/cloudfront/) distribution invalidation.
+- SFTP server
 
 ### Provider-receiver support matrix
 
@@ -79,7 +80,7 @@ starting `midasd` webserver.
     "abcd-efgh-ijkl": {
       // Name of the site. May be passed to generator.
       "siteName": "Sample site",
-      // Very important setting, specifies which SSG (receiver) is used. Required.
+      // Very important setting, specifies which SSG (receiver) is used. Required. Currently only hugo supported.
       "service": "hugo",
       // Where the site code lives. Should be absolute path. Required.
       "rootDir": "/home/kitten/hugo-site",
@@ -98,9 +99,9 @@ starting `midasd` webserver.
       "deployment": {
         // Self-explainatory. If the deployment is enabled.
         "enabled": true,
-        // Name of the provider to use. Currently only AWS is supported.
+        // Name of the provider to use. Possible: aws, sftp. Required.
         "target": "aws",
-        // Target-specific settings.
+        // AWS-specific settings.
         "aws": {
           // Name of the bucket to use for upload.
           "bucketName": "hugo-test",
@@ -111,6 +112,25 @@ starting `midasd` webserver.
           "region": "eu-central-1",
           // If provided, all files in the distribution will be invalidated after deployment.
           "cloudfrontDistribution": "E3SABCD1234",
+        },
+        // SFTP-specific settings.
+        "sftp": {
+          // Server address. Required.
+          "host": "1.2.3.4",
+          // SSH/SFTP server port. Default: 22.
+          "port": 22,
+          // Authentication method. Possible: none, password, key.
+          "method": "password",
+          // Username.
+          "user": "me",
+          // Password
+          "password": "secret",
+          // Private key file. Required if key method is used.
+          "key": "/home/kitten/id_rsa",
+          // Passphrase of the key file. Optional.
+          "keyPassphrase": "super_secret_wow",
+          // Path to the directory on the server. Required.
+          "path": "/home/kitten/mysite/",
         }
       },
       // Same as the deployment above, using same config structure, but for drafts.
