@@ -27,12 +27,12 @@ type AWSDeploymentSettigs struct {
 }
 
 type SSHDeploymentSettings struct {
-	Host        string `json:"host"`
-	Port        *int   `json:"port"`
-	User        string `json:"user"`
-	Method      string `json:"method"`
-	Password    string `json:"password,omitempty"`
-	Key         string `json:"key,omitempty"`
-	KeyPassword string `json:"keyPassword,omitempty"`
-	Path        string `json:"path"`
+	Host          string `json:"host"`
+	Port          *int   `json:"port"`
+	User          string `json:"user"`
+	Method        string `json:"method"`
+	Password      string `json:"password,omitempty"`
+	Key           string `json:"key,omitempty"`
+	KeyPassphrase string `json:"keyPassphrase,omitempty"`
+	Path          string `json:"path"`
 }

@@ -13,6 +13,7 @@ require (
 	github.com/go-chi/httplog v0.2.1
 	github.com/gosimple/slug v1.11.2
 	github.com/microcosm-cc/bluemonday v1.0.18
+	github.com/pkg/sftp v1.13.5
 	github.com/rollbar/rollbar-go v1.4.2
 	github.com/rs/zerolog v1.18.1-0.20200514152719-663cbb4c8469
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
@@ -35,6 +36,8 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.6 // indirect
 )

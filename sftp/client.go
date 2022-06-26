@@ -9,19 +9,44 @@ package sftp
 import (
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/walk"
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
+	"strings"
 )
 
 type Client struct {
-	sshConfig  midas.SSHDeploymentSettings
-	connection *ssh.Client
+	sshConfig midas.SSHDeploymentSettings
+	rootDir   string
+
+	closed bool
+
+	sshClient  *ssh.Client
+	sftpClient *sftp.Client
+}
+
+// NewClient creates a new SFTP client.
+//
+// The Client.Connect method must be called before using the client.
+func NewClient(sshConfig midas.SSHDeploymentSettings) *Client {
+	path := sshConfig.Path
+	if path == "" {
+		path = "./"
+	}
+
+	return &Client{
+		sshConfig: sshConfig,
+		rootDir:   path,
+	}
 }
 
 // Connect establishes a connection to the remote server using SSH protocol using given configuration.
 func (c *Client) Connect() error {
 	var hostKey ssh.PublicKey
-	config := &ssh.ClientConfig{}
+	config := &ssh.ClientConfig{
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
 
 	// Set authentication data
 	if c.sshConfig.User != "" {
@@ -39,7 +64,7 @@ func (c *Client) Connect() error {
 		}
 	}
 
-	// Set SSH connection address
+	// Set SSH sshClient address
 	port := 22
 	if c.sshConfig.Port != nil {
 		port = *c.sshConfig.Port
@@ -47,19 +72,60 @@ func (c *Client) Connect() error {
 
 	addr := fmt.Sprintf("%s:%d", c.sshConfig.Host, port)
 
+	fmt.Printf("Trying to handshake with %s...\n", addr)
+
 	// Connect and perform a handshake
 	connection, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return err
 	}
 
-	c.connection = connection
+	sftpConnection, err := sftp.NewClient(connection)
+	if err != nil {
+		return err
+	}
+
+	c.sshClient = connection
+	c.sftpClient = sftpConnection
 	return nil
 }
 
 // Close closes the connection to the remote server.
-func (c *Client) Close() {
-	_ = c.connection.Close()
+func (c *Client) Close() error {
+	if !c.closed {
+		err := c.sftpClient.Close()
+		err2 := c.sshClient.Close()
+		if err == nil && err2 == nil {
+			c.closed = true
+		}
+
+		return err
+	}
+
+	return nil
+}
+
+// RemoteFiles returns a list of files in the remote directory.
+func (c *Client) RemoteFiles() (walk.FileMap, []error) {
+	var (
+		errors []error
+		files  = make(walk.FileMap)
+		walker = c.sftpClient.Walk(c.rootDir)
+	)
+
+	for walker.Step() {
+		if err := walker.Err(); err != nil {
+			errors = append(errors, err)
+		}
+
+		relPath := strings.TrimPrefix(walker.Path(), c.rootDir)
+
+		if relPath != "" {
+			files[relPath] = walker.Stat()
+		}
+	}
+
+	return files, errors
 }
 
 // authenticationMethod returns the authentication method name and the authentication method slice based on the provided SSH configuration.
@@ -92,8 +158,8 @@ func (c *Client) authenticationMethod() (*string, *[]ssh.AuthMethod, error) {
 
 		var signer ssh.Signer
 
-		if c.sshConfig.KeyPassword != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(c.sshConfig.KeyPassword))
+		if c.sshConfig.KeyPassphrase != "" {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(c.sshConfig.KeyPassphrase))
 		} else {
 			signer, err = ssh.ParsePrivateKey(key)
 		}
