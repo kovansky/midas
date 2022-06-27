@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/walk"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -25,18 +26,7 @@ import (
 	"time"
 )
 
-type fileWalk chan string
-
-func (f fileWalk) Walk(path string, info os.FileInfo, err error) error {
-	if err != nil {
-		return err
-	}
-	if info.IsDir() {
-		return nil
-	}
-	f <- path
-	return nil
-}
+var _ midas.Deployment = (*Deployment)(nil)
 
 type Deployment struct {
 	site               midas.Site
@@ -93,7 +83,6 @@ func (d *Deployment) Deploy() error {
 	for path := range walker {
 		err = func() error {
 			rel, err := filepath.Rel(d.publicPath, path)
-
 			if err != nil {
 				return err
 			}
@@ -217,8 +206,8 @@ func (d *Deployment) invalidateCloudfront() error {
 }
 
 // retrieveFiles walks the public directory and returns a channel of files to be uploaded.
-func (d *Deployment) retrieveFiles() (fileWalk, error) {
-	walker := make(fileWalk)
+func (d *Deployment) retrieveFiles() (walk.FileWalk, error) {
+	walker := make(walk.FileWalk)
 
 	// Gather the files to upload by walking the path recursively.
 	go func() {

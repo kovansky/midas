@@ -30,6 +30,10 @@ func (s *Server) registerStrapiToHugoRoutes(r chi.Router) {
 }
 
 func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
+	log := httplog.LogEntry(r.Context())
+
+	log.Info().Msgf("Received request from strapi to hugo")
+
 	cfg := midas.SiteConfigFromContext(r.Context())
 
 	if cfg == nil {
@@ -66,8 +70,6 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log := httplog.LogEntry(r.Context())
-
 	handler := &StrapiToHugoHandler{
 		HugoSite: hugoSite,
 		Payload:  payload,
@@ -82,6 +84,10 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
+	log := httplog.LogEntry(r.Context())
+
+	log.Info().Msgf("Received rebuild request from strapi to hugo")
+
 	cfg := midas.SiteConfigFromContext(r.Context())
 
 	if cfg == nil {
@@ -99,8 +105,6 @@ func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
 		Error(w, r, err)
 		return
 	}
-
-	log := httplog.LogEntry(r.Context())
 
 	handler := &StrapiToHugoHandler{
 		HugoSite: hugoSite,
