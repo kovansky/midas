@@ -137,7 +137,8 @@
                   "type": "string",
                   "description": "Name of the provider of the cloud services",
                   "enum": [
-                    "aws"
+                    "aws",
+                    "sftp"
                   ]
                 },
                 "aws": {
@@ -166,7 +167,7 @@
                     }
                   }
                 },
-                "ssh": {
+                "sftp": {
                   "type": "object",
                   "description": "Configuration for SSH deployment",
                   "properties": {

@@ -11,10 +11,10 @@ type Deployment interface {
 }
 
 type DeploymentSettings struct {
-	Enabled bool                  `json:"enabled,default=false"`
-	Target  string                `json:"target"` // Can be: AWS, SFTP
-	AWS     AWSDeploymentSettigs  `json:"aws,omitempty"`
-	SFTP    SSHDeploymentSettings `json:"ssh,omitempty"`
+	Enabled bool                   `json:"enabled,default=false"`
+	Target  string                 `json:"target"` // Can be: AWS, SFTP
+	AWS     AWSDeploymentSettigs   `json:"aws,omitempty"`
+	SFTP    SFTPDeploymentSettings `json:"sftp,omitempty"`
 }
 
 type AWSDeploymentSettigs struct {
@@ -26,7 +26,7 @@ type AWSDeploymentSettigs struct {
 	CloudfrontDistribution string `json:"cloudfrontDistribution,omitempty"`
 }
 
-type SSHDeploymentSettings struct {
+type SFTPDeploymentSettings struct {
 	Host          string `json:"host"`
 	Port          *int   `json:"port"`
 	User          string `json:"user"`

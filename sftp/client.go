@@ -19,7 +19,7 @@ import (
 )
 
 type Client struct {
-	sshConfig midas.SSHDeploymentSettings
+	sshConfig midas.SFTPDeploymentSettings
 	rootDir   string
 
 	closed bool
@@ -31,7 +31,7 @@ type Client struct {
 // NewClient creates a new SFTP client.
 //
 // The Client.Connect method must be called before using the client.
-func NewClient(sshConfig midas.SSHDeploymentSettings) *Client {
+func NewClient(sshConfig midas.SFTPDeploymentSettings) *Client {
 	path := sshConfig.Path
 	if path == "" {
 		path = "./"
@@ -146,25 +146,40 @@ func (c *Client) RemoveEmptyDirs() error {
 // UploadNewFile creates a source file in the remote server.
 func (c *Client) UploadNewFile(filePath string, file *os.File) error {
 	absolutePath := filepath.ToSlash(filepath.Clean(filepath.Join(c.rootDir, filePath)))
+	dir := filepath.ToSlash(filepath.Dir(absolutePath))
+
+	// First we need to create all parent directories
+	err := c.sftpClient.MkdirAll(dir)
+	if err != nil {
+		return fmt.Errorf("could not create directory %s in remote: %s", dir, err)
+	}
 
 	dstFile, err := c.sftpClient.Create(absolutePath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file %s on remote: %s", filePath, err)
 	}
 	defer func(dstFile *sftp.File) {
 		_ = dstFile.Close()
 	}(dstFile)
 
 	_, err = io.Copy(dstFile, file)
+	if err != nil {
+		return fmt.Errorf("failed to copy file %s to remote: %s", filePath, err)
+	}
 
-	return err
+	return nil
 }
 
 // RemoveFile removes a file from the remote server.
 func (c *Client) RemoveFile(filePath string) error {
 	absolutePath := filepath.ToSlash(filepath.Clean(filepath.Join(c.rootDir, filePath)))
 
-	return c.sftpClient.Remove(absolutePath)
+	err := c.sftpClient.Remove(absolutePath)
+	if err != nil {
+		return fmt.Errorf("could not remove file %s from remote: %s", filePath, err)
+	}
+
+	return nil
 }
 
 // authenticationMethod returns the authentication method name and the authentication method slice based on the provided SFTP configuration.
