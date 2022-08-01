@@ -124,10 +124,15 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	modelName := payload.Metadata()["model"].(string)
 	model, _ := s.getModel(modelName)
 	archetypePath := model.ArchetypePath
+	outputDir := model.OutputDir
+
+	if outputDir == "false" {
+		return "", nil
+	}
+
 	if !filepath.IsAbs(archetypePath) {
 		archetypePath = filepath.Join(s.Site.RootDir, archetypePath)
 	}
-	outputDir := model.OutputDir
 	if !filepath.IsAbs(outputDir) {
 		outputDir = filepath.Join(s.Site.RootDir, outputDir)
 	}
