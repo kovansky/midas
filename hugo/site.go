@@ -199,6 +199,12 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	modelName := payload.Metadata()["model"].(string)
 	model, _ := s.getModel(modelName)
 	archetypePath := model.ArchetypePath
+	configOutputDir := model.OutputDir
+
+	if configOutputDir == "false" {
+		return "", nil
+	}
+
 	if !filepath.IsAbs(archetypePath) {
 		archetypePath = filepath.Join(s.Site.RootDir, archetypePath)
 	}

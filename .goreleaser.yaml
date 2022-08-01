@@ -46,4 +46,4 @@ release:
     - midasd
   header: |
     ## Midas v{{ .Version }} ({{ .Date }})
-  name_template: "{{ .ProjectName }}-v{{ .Version }}"
+  name_template: "{{ .ProjectName }} v{{ .Version }}"
