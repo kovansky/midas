@@ -150,7 +150,15 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	}
 
 	// Format output filename
-	title := fmt.Sprintf("%v", payload.Entry()["Title"])
+	var titleField string
+
+	if model.Fields.Title == nil {
+		titleField = "Title"
+	} else {
+		titleField = *model.Fields.Title
+	}
+
+	title := fmt.Sprintf("%v", payload.Entry()[titleField])
 	slug := midas.CreateSlug(title)
 	outputPath := filepath.Join(outputDir, slug+".html")
 
@@ -176,7 +184,7 @@ func (s SiteService) CreateEntry(payload midas.Payload) (string, error) {
 	}
 
 	// Parse archetype and write it to output
-	err = executeTemplate(tmpl, output, payload)
+	err = s.executeTemplate(tmpl, output, payload)
 	if err != nil {
 		return "", err
 	}
@@ -237,11 +245,19 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	}
 
 	// Format new output filename
-	title := fmt.Sprintf("%v", payload.Entry()["Title"])
+	var titleField string
+
+	if model.Fields.Title == nil {
+		titleField = "Title"
+	} else {
+		titleField = *model.Fields.Title
+	}
+
+	title := fmt.Sprintf("%v", payload.Entry()[titleField])
 	slug := midas.CreateSlug(title)
 	outputPath := filepath.Join(outputDir, slug+".html")
 
-	// Check if output filename is free (excluding situation where name doesn't changed)
+	// Check if output filename is free (excluding situation where name doesn't change)
 	if fileExists(outputPath) && filepath.Base(outputPath) != filepath.Base(oldPath) {
 		return "", midas.Errorf(midas.ErrInvalid, "output file %s already exists", filepath.Base(outputPath))
 	}
@@ -268,7 +284,7 @@ func (s SiteService) UpdateEntry(payload midas.Payload) (string, error) {
 	}
 
 	// Parse archetype and write it to output
-	err = executeTemplate(tmpl, output, payload)
+	err = s.executeTemplate(tmpl, output, payload)
 	if err != nil {
 		return "", err
 	}
@@ -381,9 +397,16 @@ func fileExists(filename string) bool {
 }
 
 // executeTemplate sanitizes the HTML and executes the template to the output file
-func executeTemplate(tmpl *template.Template, output *os.File, payload midas.Payload) (err error) {
+func (s SiteService) executeTemplate(tmpl *template.Template, output *os.File, payload midas.Payload) (err error) {
+	modelName := payload.Metadata()["model"].(string)
+	model, _ := s.getModel(modelName)
+
 	sanitized := payload.Entry()
-	sanitized["Content"] = template.HTML(midas.Sanitizer.Sanitize(sanitized["Content"].(string)))
+	if model.Fields.HTML != nil && len(*model.Fields.HTML) > 0 {
+		for _, field := range *model.Fields.HTML {
+			sanitized[field] = template.HTML(midas.Sanitizer.Sanitize(sanitized[field].(string)))
+		}
+	}
 
 	// Parse archetype and write it to output
 	err = tmpl.Execute(output, struct {
