@@ -32,6 +32,10 @@ type OutputSettings struct {
 type ModelSettings struct {
 	ArchetypePath string `json:"archetypePath,omitempty"`
 	OutputDir     string `json:"outputDir,omitempty"`
+	Fields        struct {
+		Title *string   `json:"title,omitempty"`
+		HTML  *[]string `json:"html,omitempty"`
+	} `json:"fields"`
 }
 
 type RegistrySettings struct {
