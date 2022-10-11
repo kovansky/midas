@@ -151,7 +151,7 @@ func SetUp(t *testing.T) *Server {
 					Type: "mock",
 				},
 				CollectionTypes: map[string]midas.ModelSettings{
-					"post": {"./archetypes/archetype.md", "./out"},
+					"post": {ArchetypePath: "./archetypes/archetype.md", OutputDir: "./out"},
 				},
 				SingleTypes: map[string]midas.ModelSettings{
 					"homepage": {},
