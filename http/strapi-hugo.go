@@ -64,6 +64,12 @@ func (s *Server) handleStrapiToHugo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Info().Fields(map[string]interface{}{
+		"page":  cfg.SiteName,
+		"model": payload.Metadata()["model"],
+		"id":    payload.Entry()["id"],
+	}).Msg("Request data")
+
 	hugoSite, err := s.SiteServices["hugo"](*cfg)
 	if err != nil {
 		Error(w, r, err)
@@ -230,7 +236,7 @@ func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(false); err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -249,7 +255,7 @@ func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(false); err != nil {
+	if err := h.HugoSite.BuildSite(true); err != nil {
 		Error(w, r, err)
 		return
 	}
