@@ -104,6 +104,24 @@
                     "outputDir": {
                       "type": "string",
                       "description": "In which directory the entries of this type should be generated."
+                    },
+                    "fields": {
+                      "type": "object",
+                      "description": "Overwrite the names of the fields important for Midas.",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Field containing title. Used to generate slug and filename.",
+                          "default": "Title"
+                        },
+                        "html": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "description": "Fields that should be treated as HTML - therefore treated with sanitizer."
+                        }
+                      }
                     }
                   }
                 }
