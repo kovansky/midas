@@ -117,6 +117,7 @@ func (c *Client) RemoteFiles() (walk.FileMap, []error) {
 	for walker.Step() {
 		if err := walker.Err(); err != nil {
 			errors = append(errors, err)
+			continue
 		}
 
 		stat := walker.Stat()
