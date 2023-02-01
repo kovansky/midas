@@ -86,11 +86,17 @@ func (s SiteService) constructBuildArgs(useCache, isDraft bool) (arg []string) {
 		}
 	} else {
 		arg = append(arg, "-d")
-
 		if s.Site.OutputSettings.Draft != "" {
 			arg = append(arg, s.Site.OutputSettings.Draft)
 		} else {
 			arg = append(arg, "publicDrafts")
+		}
+
+		arg = append(arg, "-e")
+		if s.Site.OutputSettings.DraftEnvironment != "" {
+			arg = append(arg, s.Site.OutputSettings.DraftEnvironment)
+		} else {
+			arg = append(arg, "development")
 		}
 
 		// -D is for build drafts, -E for build expired, -F for build future

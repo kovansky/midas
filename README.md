@@ -93,7 +93,9 @@ starting `midasd` webserver.
         // Main site will be generated to this directory. Default: public
         "build": "public",
         // Site with drafts will be generated to this directory. Default: publicDrafts
-        "draft": "publicDrafts"
+        "draft": "publicDrafts",
+        // The environment that should be passed to the generator. Default: development
+        "draftEnvironment": "development"
       },
       // You can specify deployment configuration to upload built site to the cloud.
       "deployment": {

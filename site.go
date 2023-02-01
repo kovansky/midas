@@ -25,8 +25,9 @@ type Site struct {
 }
 
 type OutputSettings struct {
-	Build string `json:"build,omitempty"`
-	Draft string `json:"draft,omitempty"`
+	Build            string `json:"build,omitempty"`
+	Draft            string `json:"draft,omitempty"`
+	DraftEnvironment string `json:"draftEnvironment,omitempty"`
 }
 
 type ModelSettings struct {
