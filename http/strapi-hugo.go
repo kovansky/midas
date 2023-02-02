@@ -126,7 +126,7 @@ func (s *Server) HandleHugoRebuild(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err = hugoSite.BuildSite(useCache); err != nil {
+	if err = hugoSite.BuildSite(useCache, log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -198,7 +198,7 @@ func (h StrapiToHugoHandler) handleCreateSingle(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(true); err != nil {
+	if err := h.HugoSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -217,7 +217,7 @@ func (h StrapiToHugoHandler) handleCreateCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(true); err != nil {
+	if err := h.HugoSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -236,7 +236,7 @@ func (h StrapiToHugoHandler) handleUpdateSingle(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(true); err != nil {
+	if err := h.HugoSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -255,7 +255,7 @@ func (h StrapiToHugoHandler) handleUpdateCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(true); err != nil {
+	if err := h.HugoSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -274,7 +274,7 @@ func (h StrapiToHugoHandler) handleDeleteCollection(w http.ResponseWriter, r *ht
 		return
 	}
 
-	if err := h.HugoSite.BuildSite(true); err != nil {
+	if err := h.HugoSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -319,7 +319,7 @@ func (h StrapiToHugoHandler) deploy(cfg *midas.Site, draft bool) error {
 	if dpl, ok := midas.DeploymentTargets[dplSettings.Target]; ok {
 		var err error
 
-		if deploymentService, err = dpl(*cfg, dplSettings); err != nil {
+		if deploymentService, err = dpl(*cfg, dplSettings, draft); err != nil {
 			return midas.Errorf(midas.ErrInternal, "could not create deployment %s: %s", dplSettings.Target, err)
 		}
 	} else {

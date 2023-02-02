@@ -6,6 +6,8 @@
 
 package midas
 
+import "github.com/rs/zerolog"
+
 type Site struct {
 	SiteName string `json:"siteName"`
 	Service  string `json:"service"`
@@ -25,8 +27,9 @@ type Site struct {
 }
 
 type OutputSettings struct {
-	Build string `json:"build,omitempty"`
-	Draft string `json:"draft,omitempty"`
+	Build            string `json:"build,omitempty"`
+	Draft            string `json:"draft,omitempty"`
+	DraftEnvironment string `json:"draftEnvironment,omitempty"`
 }
 
 type ModelSettings struct {
@@ -45,7 +48,7 @@ type RegistrySettings struct {
 
 type SiteService interface {
 	GetRegistryService() (RegistryService, error)
-	BuildSite(useCache bool) error
+	BuildSite(useCache bool, log zerolog.Logger) error
 	CreateEntry(payload Payload) (string, error)
 	UpdateEntry(payload Payload) (string, error)
 	DeleteEntry(payload Payload) (string, error)

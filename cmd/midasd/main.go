@@ -29,7 +29,15 @@ import (
 )
 
 var (
-	commit, version, date, environment string
+	commit, version, date, environment, logLevel string
+	logLevelAcceptedValues                       = map[string]struct{}{
+		"trace":    {},
+		"debug":    {},
+		"info":     {},
+		"warn":     {},
+		"error":    {},
+		"critical": {},
+	}
 )
 
 // main is the entry point of the application binary.
@@ -113,7 +121,7 @@ func NewMain() *Main {
 		Config:     defaultConfig(),
 		ConfigPath: defaultConfigPath,
 
-		HTTPServer: http.NewServer(false),
+		HTTPServer: http.NewServer(logLevel, false),
 	}
 }
 
@@ -132,9 +140,14 @@ func (m *Main) ParseFlags(_ context.Context, args []string) error {
 	fs := flag.NewFlagSet("midasd", flag.ContinueOnError)
 	fs.StringVar(&m.ConfigPath, "config", defaultConfigPath, "config path")
 	fs.StringVar(&environment, "env", "production", "app environment (development, production)")
+	fs.StringVar(&logLevel, "log", "info", "log level (trace, debug, info, warn, error, critical)")
 
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+
+	if _, ok := logLevelAcceptedValues[logLevel]; !ok {
+		logLevel = "info"
 	}
 
 	configPath, err := expand(m.ConfigPath)
@@ -185,12 +198,12 @@ func (m *Main) Run(_ context.Context) (err error) {
 		},
 	}
 
-	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error){
-		"aws": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
-			return aws.New(site, settings)
+	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error){
+		"aws": func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
+			return aws.New(site, settings, isDraft)
 		},
-		"sftp": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
-			return sftp.New(site, settings)
+		"sftp": func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
+			return sftp.New(site, settings, isDraft)
 		},
 	}
 

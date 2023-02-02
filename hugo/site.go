@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/rs/zerolog"
 	"html/template"
 	"os"
 	"os/exec"
@@ -49,7 +50,7 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 	return s.registry, nil
 }
 
-func (s SiteService) BuildSite(useCache bool) error {
+func (s SiteService) BuildSite(useCache bool, log zerolog.Logger) error {
 	var arg = s.constructBuildArgs(useCache, false)
 
 	cmd := exec.Command("hugo", arg...)
@@ -86,11 +87,17 @@ func (s SiteService) constructBuildArgs(useCache, isDraft bool) (arg []string) {
 		}
 	} else {
 		arg = append(arg, "-d")
-
 		if s.Site.OutputSettings.Draft != "" {
 			arg = append(arg, s.Site.OutputSettings.Draft)
 		} else {
 			arg = append(arg, "publicDrafts")
+		}
+
+		arg = append(arg, "-e")
+		if s.Site.OutputSettings.DraftEnvironment != "" {
+			arg = append(arg, s.Site.OutputSettings.DraftEnvironment)
+		} else {
+			arg = append(arg, "development")
 		}
 
 		// -D is for build drafts, -E for build expired, -F for build future

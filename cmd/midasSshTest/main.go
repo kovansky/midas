@@ -145,9 +145,9 @@ func (m *Main) Run(_ context.Context) (err error) {
 		},
 	}
 
-	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error){
-		"aws": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
-			return aws.New(site, settings)
+	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error){
+		"aws": func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
+			return aws.New(site, settings, isDraft)
 		},
 	}
 
@@ -157,7 +157,7 @@ func (m *Main) Run(_ context.Context) (err error) {
 	if site := mapFirstEntry(m.Config.Sites); site == nil {
 		return fmt.Errorf("no sites configured")
 	} else {
-		deployment, err = sftp.New(*site, site.Deployment)
+		deployment, err = sftp.New(*site, site.Deployment, false)
 		if err != nil {
 			return err
 		}

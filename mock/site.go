@@ -6,14 +6,17 @@
 
 package mock
 
-import "github.com/kovansky/midas"
+import (
+	"github.com/kovansky/midas"
+	"github.com/rs/zerolog"
+)
 
 var _ midas.SiteService = (*SiteService)(nil)
 
 type SiteService struct {
 	GetRegistryServiceFn func() (midas.RegistryService, error)
 	CreateRegistryFn     func() (string, error)
-	BuildSiteFn          func(useCache bool) error
+	BuildSiteFn          func(useCache bool, log zerolog.Logger) error
 	CreateEntryFn        func(payload midas.Payload) (string, error)
 	UpdateEntryFn        func(payload midas.Payload) (string, error)
 	DeleteEntryFn        func(payload midas.Payload) (string, error)
@@ -28,8 +31,8 @@ func (s *SiteService) GetRegistryService() (midas.RegistryService, error) {
 	return s.GetRegistryServiceFn()
 }
 
-func (s *SiteService) BuildSite(useCache bool) error {
-	return s.BuildSiteFn(useCache)
+func (s *SiteService) BuildSite(useCache bool, log zerolog.Logger) error {
+	return s.BuildSiteFn(useCache, log)
 }
 
 func (s *SiteService) CreateEntry(payload midas.Payload) (string, error) {
