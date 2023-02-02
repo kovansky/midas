@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/rs/zerolog"
 	"html/template"
 	"os"
 	"os/exec"
@@ -49,8 +50,15 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 	return s.registry, nil
 }
 
-func (s SiteService) BuildSite(useCache bool) error {
+func (s SiteService) BuildSite(useCache bool, log zerolog.Logger) error {
 	var arg = s.constructBuildArgs(useCache, false)
+
+	log.Debug().
+		Fields(map[string]interface{}{
+			"cmd":  "hugo",
+			"args": arg,
+		}).
+		Msgf("Build command")
 
 	cmd := exec.Command("hugo", arg...)
 	cmd.Dir = s.Site.RootDir

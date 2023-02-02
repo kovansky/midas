@@ -11,6 +11,7 @@ import (
 	"github.com/kovansky/midas"
 	midashttp "github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/mock"
+	"github.com/rs/zerolog"
 	"io"
 	"net/http"
 	"testing"
@@ -67,7 +68,7 @@ func MustOpenServer(tb testing.TB, siteServices map[string]func(site midas.Site)
 	}
 
 	// Init wrapper and set test config settings.
-	s := &Server{Server: midashttp.NewServer(true)}
+	s := &Server{Server: midashttp.NewServer("trace", true)}
 
 	s.SiteServices = siteServices
 	s.Config = config
@@ -110,7 +111,7 @@ func SetUp(t *testing.T) *Server {
 		"hugo": func(site midas.Site) (midas.SiteService, error) {
 			siteService := mock.NewSiteService()
 
-			siteService.BuildSiteFn = func(useCache bool) error {
+			siteService.BuildSiteFn = func(useCache bool, _ zerolog.Logger) error {
 				MockSiteCounters["BuildSite"]++
 
 				return nil
