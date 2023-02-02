@@ -198,12 +198,12 @@ func (m *Main) Run(_ context.Context) (err error) {
 		},
 	}
 
-	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error){
-		"aws": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
-			return aws.New(site, settings)
+	midas.DeploymentTargets = map[string]func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error){
+		"aws": func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
+			return aws.New(site, settings, isDraft)
 		},
-		"sftp": func(site midas.Site, settings midas.DeploymentSettings) (midas.Deployment, error) {
-			return sftp.New(site, settings)
+		"sftp": func(site midas.Site, settings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
+			return sftp.New(site, settings, isDraft)
 		},
 	}
 
