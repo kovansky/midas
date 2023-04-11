@@ -29,7 +29,8 @@ site (e.g. adds a new post) and regenerates it (builds).
 
 ### Receivers (Static site generators)
 
-- [Hugo](https://gohugo.io)
+- [Hugo](https://gohugo.io) - full support with creating/updating posts/pages.
+- [Astro](https://astro.build) - partial (build) support. Data fetching has to be done on the Astro end.
 
 ### Deployment targets
 
@@ -40,9 +41,10 @@ site (e.g. adds a new post) and regenerates it (builds).
 
 ### Provider-receiver support matrix
 
-|          | Strapi |
-|----------|--------|
-| **Hugo** | ✔      |
+|           | Strapi |
+|-----------|--------|
+| **Hugo**  | ✔      |
+| **Astro** | ✔      |
 
 ## Installation
 
@@ -80,7 +82,7 @@ starting `midasd` webserver.
     "abcd-efgh-ijkl": {
       // Name of the site. May be passed to generator.
       "siteName": "Sample site",
-      // Very important setting, specifies which SSG (receiver) is used. Required. Currently only hugo supported.
+      // Very important setting, specifies which SSG (receiver) is used. Required. Currently, hugo fully supported and astro just for build process.
       "service": "hugo",
       // Where the site code lives. Should be absolute path. Required.
       "rootDir": "/home/kitten/hugo-site",
@@ -139,7 +141,7 @@ starting `midasd` webserver.
       "draftsDeployment": {},
       // Required. Midas keeps an id->filename mapping for created entries.
       "registry": {
-        // Currently only jsonfile storage is supported.
+        // Currently jsonfile storage is supported, as well as "none" to not keep registry at all.
         "type": "jsonfile",
         // Provide json filename where the mapping should be saved. Can be absolute or relative - then will be placed under site's rootDir 
         "location": "./midas-registry.json"
