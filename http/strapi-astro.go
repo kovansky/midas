@@ -126,7 +126,7 @@ func (s *Server) HandleAstroRebuild(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err = astroSite.BuildSite(useCache); err != nil {
+	if err = astroSite.BuildSite(useCache, log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -170,7 +170,7 @@ func (h StrapiToAstroHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h StrapiToAstroHandler) handleBuild(w http.ResponseWriter, r *http.Request) {
-	if err := h.AstroSite.BuildSite(true); err != nil {
+	if err := h.AstroSite.BuildSite(true, h.log); err != nil {
 		Error(w, r, err)
 		return
 	}
@@ -215,7 +215,7 @@ func (h StrapiToAstroHandler) deploy(cfg *midas.Site, draft bool) error {
 	if dpl, ok := midas.DeploymentTargets[dplSettings.Target]; ok {
 		var err error
 
-		if deploymentService, err = dpl(*cfg, dplSettings); err != nil {
+		if deploymentService, err = dpl(*cfg, dplSettings, draft); err != nil {
 			return midas.Errorf(midas.ErrInternal, "could not create deployment %s: %s", dplSettings.Target, err)
 		}
 	} else {

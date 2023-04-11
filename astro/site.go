@@ -8,6 +8,7 @@ package astro
 
 import (
 	"github.com/kovansky/midas"
+	"github.com/rs/zerolog"
 	"os/exec"
 )
 
@@ -44,7 +45,7 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 	return s.registry, nil
 }
 
-func (s SiteService) BuildSite(_ bool) error {
+func (s SiteService) BuildSite(_ bool, _ zerolog.Logger) error {
 	cmd := exec.Command("astro", "build")
 	cmd.Dir = s.Site.RootDir
 
