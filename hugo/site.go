@@ -50,7 +50,7 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 	return s.registry, nil
 }
 
-func (s SiteService) BuildSite(useCache bool, log zerolog.Logger) error {
+func (s SiteService) BuildSite(useCache bool, _ zerolog.Logger) error {
 	var arg = s.constructBuildArgs(useCache, false)
 
 	cmd := exec.Command("hugo", arg...)

@@ -12,11 +12,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/astro"
 	"github.com/kovansky/midas/aws"
 	"github.com/kovansky/midas/bluemonday"
 	"github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/hugo"
 	"github.com/kovansky/midas/jsonfile"
+	"github.com/kovansky/midas/none"
 	"github.com/kovansky/midas/sftp"
 	"github.com/rollbar/rollbar-go"
 	"io/ioutil"
@@ -190,11 +192,17 @@ func (m *Main) Run(_ context.Context) (err error) {
 		"hugo": func(site midas.Site) (midas.SiteService, error) {
 			return hugo.NewSiteService(site)
 		},
+		"astro": func(site midas.Site) (midas.SiteService, error) {
+			return astro.NewSiteService(site)
+		},
 	}
 
 	midas.RegistryServices = map[string]func(site midas.Site) midas.RegistryService{
 		"jsonfile": func(site midas.Site) midas.RegistryService {
 			return jsonfile.NewRegistryService(site)
+		},
+		"none": func(site midas.Site) midas.RegistryService {
+			return none.NewRegistryService(site)
 		},
 	}
 

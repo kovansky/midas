@@ -37,7 +37,8 @@
               "type": "string",
               "description": "The SSG which is used to build the site",
               "enum": [
-                "hugo"
+                "hugo",
+                "astro"
               ]
             },
             "rootDir": {
@@ -81,7 +82,8 @@
                   "type": "string",
                   "description": "What type of registry should be used",
                   "enum": [
-                    "jsonfile"
+                    "jsonfile",
+                    "none"
                   ]
                 },
                 "location": {

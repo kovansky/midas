@@ -66,6 +66,7 @@ func NewServer(logLevel string, testing bool) *Server {
 
 		// Register specific routes
 		s.registerStrapiToHugoRoutes(router)
+		s.registerStrapiToAstroRoutes(router)
 	})
 
 	return s
