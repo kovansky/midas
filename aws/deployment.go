@@ -38,17 +38,22 @@ type Deployment struct {
 	cfClient  *cloudfront.Client
 }
 
-func New(site midas.Site, deploymentSettings midas.DeploymentSettings) (midas.Deployment, error) {
+func New(site midas.Site, deploymentSettings midas.DeploymentSettings, isDraft bool) (midas.Deployment, error) {
 	// Get build destination directory
-	var publicPath string
-	if site.OutputSettings.Build != "" {
+	var publicPath = filepath.Join(site.RootDir, "public")
+
+	if !isDraft && site.OutputSettings.Build != "" {
 		if filepath.IsAbs(site.OutputSettings.Build) {
 			publicPath = site.OutputSettings.Build
 		} else {
 			publicPath = filepath.Join(site.RootDir, site.OutputSettings.Build)
 		}
-	} else {
-		publicPath = filepath.Join(site.RootDir, "public")
+	} else if isDraft && site.OutputSettings.Draft != "" {
+		if filepath.IsAbs(site.OutputSettings.Draft) {
+			publicPath = site.OutputSettings.Draft
+		} else {
+			publicPath = filepath.Join(site.RootDir, site.OutputSettings.Draft)
+		}
 	}
 
 	cfg, err := config.LoadDefaultConfig(context.Background(),

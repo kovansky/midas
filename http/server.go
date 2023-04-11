@@ -37,14 +37,14 @@ type Server struct {
 	SiteServices map[string]func(site midas.Site) (midas.SiteService, error)
 }
 
-func NewServer(testing bool) *Server {
+func NewServer(logLevel string, testing bool) *Server {
 	s := &Server{
 		server:  &http.Server{},
 		router:  chi.NewRouter(),
 		testing: testing,
 	}
 
-	logger := httplog.NewLogger("midas", httplog.Options{Concise: true})
+	logger := httplog.NewLogger("midas", httplog.Options{Concise: true, LogLevel: logLevel})
 
 	if s.testing {
 		logger = logger.Output(zerolog.ConsoleWriter{Out: io.Discard})

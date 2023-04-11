@@ -57,6 +57,11 @@
                 "draft": {
                   "type": "string",
                   "description": "The directory where the builds containing drafts (site previews) output should be stored. Default value depends on the service"
+                },
+                "draftEnvironment": {
+                  "type": "string",
+                  "description": "The environment that should be passed to the generator. Default: development",
+                  "default": "development"
                 }
               }
             },
