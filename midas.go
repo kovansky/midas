@@ -18,6 +18,7 @@ var (
 	RegistryServices  map[string]func(site Site) RegistryService
 	DeploymentTargets map[string]func(site Site, settings DeploymentSettings, isDraft bool) (Deployment, error)
 	Sanitizer         SanitizerService
+	Concurrents       ConcurrentList
 )
 
 // ReportError is used to notify external services of error.

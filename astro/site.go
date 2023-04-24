@@ -7,7 +7,9 @@
 package astro
 
 import (
+	"context"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/concurrent"
 	"github.com/rs/zerolog"
 	"os/exec"
 )
@@ -46,15 +48,33 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 }
 
 func (s SiteService) BuildSite(_ bool, _ zerolog.Logger) error {
-	cmd := exec.Command("astro", "build")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "astro", "build")
 	cmd.Dir = s.Site.RootDir
+
+	err := midas.Concurrents.Add(concurrent.New(s.Site, cancel))
+	if err != nil {
+		if midas.ErrorCode(err) != midas.ErrProcessNotFound {
+			return err
+		}
+	}
 
 	out, err := cmd.CombinedOutput()
 
-	if err != nil {
-		return midas.Errorf(midas.ErrInternal, "astro build errored: %s\ncommand output: %s", err, out)
+	select {
+	case <-ctx.Done():
+		switch ctx.Err() {
+		case context.Canceled:
+			return midas.Errorf(midas.ErrCancelled, "process cancelled")
+		}
+	default:
+		midas.Concurrents.Remove(s.Site.SiteName)
+		if err != nil {
+			return midas.Errorf(midas.ErrInternal, "astro build errored: %s\ncommand output: %s", err, out)
+		}
 	}
-
 	return nil
 }
 

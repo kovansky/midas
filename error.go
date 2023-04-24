@@ -12,12 +12,14 @@ import (
 )
 
 const (
-	ErrUnauthorized = "unauthorized"
-	ErrInternal     = "internal"
-	ErrInvalid      = "invalid"
-	ErrUnaccepted   = "unaccepted"
-	ErrRegistry     = "registry"
-	ErrSiteConfig   = "site config"
+	ErrUnauthorized    = "unauthorized"
+	ErrInternal        = "internal"
+	ErrInvalid         = "invalid"
+	ErrUnaccepted      = "unaccepted"
+	ErrRegistry        = "registry"
+	ErrSiteConfig      = "site config"
+	ErrProcessNotFound = "process not found"
+	ErrCancelled       = "process cancelled"
 )
 
 // Error represents an application-specific error. App errors can be
