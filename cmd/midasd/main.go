@@ -15,6 +15,7 @@ import (
 	"github.com/kovansky/midas/astro"
 	"github.com/kovansky/midas/aws"
 	"github.com/kovansky/midas/bluemonday"
+	"github.com/kovansky/midas/concurrent"
 	"github.com/kovansky/midas/http"
 	"github.com/kovansky/midas/hugo"
 	"github.com/kovansky/midas/jsonfile"
@@ -216,6 +217,8 @@ func (m *Main) Run(_ context.Context) (err error) {
 	}
 
 	midas.Sanitizer = bluemonday.NewSanitizerService()
+
+	midas.Concurrents = concurrent.NewList()
 
 	if err := m.HTTPServer.Open(); err != nil {
 		return err

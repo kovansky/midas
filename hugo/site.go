@@ -7,9 +7,11 @@
 package hugo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/kovansky/midas"
+	"github.com/kovansky/midas/concurrent"
 	"github.com/rs/zerolog"
 	"html/template"
 	"os"
@@ -51,23 +53,41 @@ func (s SiteService) GetRegistryService() (midas.RegistryService, error) {
 }
 
 func (s SiteService) BuildSite(useCache bool, _ zerolog.Logger) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	var arg = s.constructBuildArgs(useCache, false)
 
-	cmd := exec.Command("hugo", arg...)
+	cmd := exec.CommandContext(ctx, "hugo", arg...)
 	cmd.Dir = s.Site.RootDir
 
-	out, err := cmd.CombinedOutput()
-
+	err := midas.Concurrents.Add(concurrent.New(s.Site, cancel))
 	if err != nil {
-		return midas.Errorf(midas.ErrInternal, "hugo build errored: %s\ncommand output: %s", err, out)
-	}
-
-	if s.Site.BuildDrafts {
-		if err = s.BuildDrafts(); err != nil {
+		if midas.ErrorCode(err) != midas.ErrProcessNotFound {
 			return err
 		}
 	}
 
+	out, err := cmd.CombinedOutput()
+
+	select {
+	case <-ctx.Done():
+		switch ctx.Err() {
+		case context.Canceled:
+			return midas.Errorf(midas.ErrCancelled, "process cancelled")
+		}
+	default:
+		midas.Concurrents.Remove(s.Site.SiteName)
+		if err != nil {
+			return midas.Errorf(midas.ErrInternal, "hugo build errored: %s\ncommand output: %s", err, out)
+		}
+
+		if s.Site.BuildDrafts {
+			if err = s.BuildDrafts(); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
