@@ -7,15 +7,17 @@
 package sftp
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/walk"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io"
-	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 type Client struct {
@@ -45,24 +47,24 @@ func NewClient(sshConfig midas.SFTPDeploymentSettings) *Client {
 
 // Connect establishes a connection to the remote server using SFTP protocol using given configuration.
 func (c *Client) Connect() error {
-	var hostKey ssh.PublicKey
+	hostKey, err := readHostKey(c.sshConfig.Host)
+	if err != nil {
+		return fmt.Errorf("could not connect to %s: %v", c.sshConfig.Host, err)
+	}
+
 	config := &ssh.ClientConfig{
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.FixedHostKey(hostKey),
 	}
 
 	// Set authentication data
 	if c.sshConfig.User != "" {
 		config.User = c.sshConfig.User
 	}
-	if method, authMethod, err := c.authenticationMethod(); err != nil {
+	if _, authMethod, err := c.authenticationMethod(); err != nil {
 		panic(err)
 	} else {
 		if authMethod != nil {
 			config.Auth = *authMethod
-
-			if *method == "key" {
-				config.HostKeyCallback = ssh.FixedHostKey(hostKey)
-			}
 		}
 	}
 
@@ -197,35 +199,95 @@ func (c *Client) authenticationMethod() (*string, *[]ssh.AuthMethod, error) {
 
 	switch c.sshConfig.Method {
 	case "password":
-		if c.sshConfig.Password == "" {
-			return nil, nil, fmt.Errorf("password authentication method requires password")
-		}
-		return &c.sshConfig.Method, &[]ssh.AuthMethod{ssh.Password(c.sshConfig.Password)}, nil
+		method, err := passwordMethod(c.sshConfig)
+
+		return &c.sshConfig.Method, method, err
 	case "key":
-		if c.sshConfig.Key == "" {
-			return nil, nil, fmt.Errorf("key authentication method requires key file")
-		}
+		method, err := keyMethod(c.sshConfig)
 
-		key, err := ioutil.ReadFile(c.sshConfig.Key)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		var signer ssh.Signer
-
-		if c.sshConfig.KeyPassphrase != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(c.sshConfig.KeyPassphrase))
-		} else {
-			signer, err = ssh.ParsePrivateKey(key)
-		}
-
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return &c.sshConfig.Method, &[]ssh.AuthMethod{ssh.PublicKeys(signer)}, nil
+		return &c.sshConfig.Method, method, err
 	default:
 		noneName := "none"
 		return &noneName, nil, nil
 	}
+}
+
+func passwordMethod(sshConfig midas.SFTPDeploymentSettings) (*[]ssh.AuthMethod, error) {
+	if sshConfig.Password == "" {
+		return nil, fmt.Errorf("password authentication method requires password")
+	}
+
+	return &[]ssh.AuthMethod{ssh.Password(sshConfig.Password)}, nil
+}
+
+func keyMethod(sshConfig midas.SFTPDeploymentSettings) (*[]ssh.AuthMethod, error) {
+	if sshConfig.Key == "" {
+		return nil, fmt.Errorf("key authentication method requires key file")
+	}
+
+	key, err := os.ReadFile(sshConfig.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	var signer ssh.Signer
+
+	if sshConfig.KeyPassphrase != "" {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(key, []byte(sshConfig.KeyPassphrase))
+	} else {
+		signer, err = ssh.ParsePrivateKey(key)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("could not parse private key: %v", err)
+	}
+
+	return &[]ssh.AuthMethod{ssh.PublicKeys(signer)}, nil
+}
+
+func readHostKey(host string) (ssh.PublicKey, error) {
+	home, err := getHomedir()
+	if err != nil {
+		return nil, fmt.Errorf("unable to read known_hosts file: %v", err)
+	}
+
+	// parse known_hosts file
+	file, err := os.Open(filepath.Join(home, ".ssh", "known_hosts"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to read known_hosts file: %v", err)
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+
+	scanner := bufio.NewScanner(file)
+	var hostKey ssh.PublicKey
+	for scanner.Scan() {
+		fields := strings.Split(scanner.Text(), " ")
+		if len(fields) != 3 {
+			continue
+		}
+
+		if strings.Contains(fields[0], host) {
+			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
+			if err != nil {
+				return nil, fmt.Errorf("error parsing %q: %v", fields[2], err)
+			}
+		}
+	}
+
+	if hostKey == nil {
+		return nil, fmt.Errorf("no hostkey found for %s", host)
+	}
+
+	return hostKey, nil
+}
+
+func getHomedir() (string, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("could not read current user: %v", err)
+	}
+
+	return usr.HomeDir, nil
 }
