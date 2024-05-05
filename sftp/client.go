@@ -7,7 +7,6 @@
 package sftp
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/kovansky/midas"
 	"github.com/kovansky/midas/walk"
@@ -18,7 +17,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"strings"
 )
 
 type Client struct {
@@ -48,13 +46,13 @@ func NewClient(sshConfig midas.SFTPDeploymentSettings) *Client {
 
 // Connect establishes a connection to the remote server using SFTP protocol using given configuration.
 func (c *Client) Connect() error {
-	hostKey, err := readHostKey(c.sshConfig.Host)
+	hostKeyCallback, err := getHostKeyCallback()
 	if err != nil {
 		return fmt.Errorf("could not connect to %s: %v", c.sshConfig.Host, err)
 	}
 
 	config := &ssh.ClientConfig{
-		HostKeyCallback: ssh.FixedHostKey(hostKey),
+		HostKeyCallback: hostKeyCallback,
 	}
 
 	// Set authentication data
@@ -246,42 +244,19 @@ func keyMethod(sshConfig midas.SFTPDeploymentSettings) (*[]ssh.AuthMethod, error
 	return &[]ssh.AuthMethod{ssh.PublicKeys(signer)}, nil
 }
 
-func readHostKey(host string) (ssh.PublicKey, error) {
+func getHostKeyCallback() (ssh.HostKeyCallback, error) {
 	home, err := getHomedir()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read known_hosts file: %v", err)
+		return nil, fmt.Errorf("unable to read known_hosts hostKeyCallback: %v", err)
 	}
 
-	// parse known_hosts file
-	file, err := os.Open(filepath.Join(home, ".ssh", "known_hosts"))
+	// parse known_hosts hostKeyCallback
+	hostKeyCallback, err := knownhosts.New(filepath.Join(home, ".ssh", "known_hosts"))
 	if err != nil {
-		return nil, fmt.Errorf("unable to read known_hosts file: %v", err)
-	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
-
-	scanner := bufio.NewScanner(file)
-	var hostKey ssh.PublicKey
-	for scanner.Scan() {
-		fields := strings.Split(scanner.Text(), " ")
-		if len(fields) != 3 {
-			continue
-		}
-
-		if strings.Contains(fields[0], host) || strings.Contains(fields[0], knownhosts.HashHostname(host)) {
-			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
-			if err != nil {
-				return nil, fmt.Errorf("error parsing %q: %v", fields[2], err)
-			}
-		}
+		return nil, fmt.Errorf("unable to read known_hosts hostKeyCallback: %v", err)
 	}
 
-	if hostKey == nil {
-		return nil, fmt.Errorf("no hostkey found for %s", host)
-	}
-
-	return hostKey, nil
+	return hostKeyCallback, nil
 }
 
 func getHomedir() (string, error) {
