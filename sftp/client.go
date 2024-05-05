@@ -13,6 +13,7 @@ import (
 	"github.com/kovansky/midas/walk"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 	"io"
 	"os"
 	"os/user"
@@ -268,7 +269,7 @@ func readHostKey(host string) (ssh.PublicKey, error) {
 			continue
 		}
 
-		if strings.Contains(fields[0], host) {
+		if strings.Contains(fields[0], host) || strings.Contains(fields[0], knownhosts.HashHostname(host)) {
 			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(scanner.Bytes())
 			if err != nil {
 				return nil, fmt.Errorf("error parsing %q: %v", fields[2], err)
