@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 
 FROM alpine:latest
 
-RUN apk --no-cache add curl
+RUN apk --no-cache add curl nodejs npm
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs
 COPY --from=builder /app/midasd /app/midasd
