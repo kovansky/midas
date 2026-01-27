@@ -91,3 +91,4 @@ fabric.properties
 config.json
 
 dist/
+docker/

@@ -1,0 +1,20 @@
+services:
+  midas:
+    image: midas:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./docker/config.json:/app/config/config.json
+      - ./docker/apps:/var/apps
+    network_mode: "bridge"
+    privileged: true
+    restart: "unless-stopped"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8443/system/version"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
