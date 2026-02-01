@@ -26,7 +26,7 @@ COPY --from=builder /app/midasd /app/midasd
 COPY --from=astro-tools /usr/local /usr/local
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -fsS http://localhost:8445/system/version || exit 1
+    CMD curl -fsS http://localhost:8443/system/version || exit 1
 
 EXPOSE 8443
 ENTRYPOINT ["/app/midasd"]
